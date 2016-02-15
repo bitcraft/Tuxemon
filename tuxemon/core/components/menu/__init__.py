@@ -426,15 +426,15 @@ class Menu(UserInterface):
 
         # If the position isn't specified in the function, set it to the current intance's
         # position. Otherwise, set it to the relative position
-        if (pos_x == None):
+        if (pos_x is None):
             pos_x = self.pos_x
         else:
             pos_x = pos_x + self.pos_x
-        if (pos_y == None):
+        if (pos_y is None):
             pos_y = self.pos_y
         else:
             pos_y = pos_y + self.pos_y
-        if text == None:
+        if text is None:
             text = self.text
 
         # Set up our font that we're going to use, including size, color, etc.
