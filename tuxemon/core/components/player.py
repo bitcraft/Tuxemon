@@ -864,7 +864,7 @@ class PathfindNode():
     
     def __str__(self):
         s = str(self.value)
-        if self.parent != None:
+        if self.parent is not None:
             s += str(self.parent)
         return s
 
