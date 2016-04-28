@@ -43,7 +43,7 @@ from core import state
 from core import tools
 from core.components import map
 from core.components import networking
-from core.components.animation import remove_animations_of
+from core.components.animation import Task
 
 # Create a logger for optional handling of debug messages.
 logger = logging.getLogger(__name__)
@@ -191,20 +191,20 @@ class WorldState(state.State):
         def cleanup():
             self.in_transition = False
 
+        def fade_in():
+            self.trigger_fade_in(duration)
+            self.task(cleanup, duration + .5)
+
+
+        # cancel any fades that may be going one
+        self.remove_animations_of(self)
+        self.remove_animations_of(cleanup)
+
         self.in_transition = True
         self.trigger_fade_out(duration)
 
-        # cancel any fades that may be going one
-        remove_animations_of(self.transition_alpha, self.animations)
-
-        # eventually, load_map will be called, which is a blocking call
-        # because it is blocking, the fade in will happen .5 seconds later
-        # if the load takes less than .5 seconds, or it will happen
-        # immediately following the laod, since it would have missed the time
-        # ** If load_map ever becomes non-blocking then this will cause problems **
-        self.task(self.handle_delayed_teleport, duration + .5)
-        self.task(self.trigger_fade_in, duration + .5)
-        self.task(cleanup, duration * 2 + .5)
+        task = self.task(self.handle_delayed_teleport, duration + .5)
+        task.chain(fade_in, duration + .5)
 
     def trigger_fade_in(self, duration=2):
         """ World state has own fade code b/c moving maps doesn't change state
