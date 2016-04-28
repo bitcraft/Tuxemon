@@ -79,12 +79,12 @@ class Player(object):
         # If we're doing a screen transition with this teleport, set the map name that we'll
         # load during the apex of the transition.
         # TODO: This only needs to happen once.
-        if world.start_transition:
+        if world.in_transition:
             world.delayed_mapname = mapname
 
         # Check to see if we're also performing a transition. If we are, wait to perform the
         # teleport at the apex of the transition
-        if world.start_transition:
+        if world.in_transition:
             world.delayed_teleport = True
             # Set the global_x/y variables based on the player's pixel position and the tile size.
             world.delayed_x = player.position[0] - (position_x * player.tile_size[0])
@@ -285,7 +285,7 @@ class Player(object):
 
         # If we're doing a transition, only change the player's facing when we've reached the apex
         # of the transition.
-        if game.current_state.start_transition:
+        if game.current_state.in_transition:
             game.current_state.delayed_facing = direction
         else:
             game.player1.facing = direction

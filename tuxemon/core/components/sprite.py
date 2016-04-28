@@ -265,10 +265,8 @@ class RelativeGroup(SpriteGroup):
         """A rect object that contains all sprites of this group
         """
         rect = super(RelativeGroup, self).calc_bounding_rect()
-        for sprite in self.sprites():
-            print sprite, sprite.rect
         return rect
-        return self.calc_absolute_rect(rect)
+        # return self.calc_absolute_rect(rect)
 
     def calc_absolute_rect(self, rect):
         self.update_rect_from_parent()
