@@ -193,7 +193,10 @@ class WorldState(state.State):
 
         def fade_in():
             self.trigger_fade_in(duration)
-            self.task(cleanup, duration + .5)
+            self.task(cleanup, duration)
+
+        # stop player movement
+        self.player1.moving = False
 
         # cancel any fades that may be going one
         self.remove_animations_of(self)
@@ -202,7 +205,7 @@ class WorldState(state.State):
         self.in_transition = True
         self.trigger_fade_out(duration)
 
-        task = self.task(self.handle_delayed_teleport, duration + .5)
+        task = self.task(self.handle_delayed_teleport, duration)
         task.chain(fade_in, duration + .5)
 
     def trigger_fade_in(self, duration=2):

@@ -99,11 +99,6 @@ class Player(object):
             if map_path != world.current_map.filename:
                 world.change_map(map_path)
 
-        # Update the server/clients of our new map and populate any other players.
-        if game.isclient or game.ishost:
-            game.add_clients_to_map(game.client.client.registry)
-            game.client.update_player(player.facing)
-
         # Stop the player's movement so they don't continue their move after they teleported.
         player.moving = False
 
