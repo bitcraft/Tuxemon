@@ -195,7 +195,6 @@ class WorldState(state.State):
             self.trigger_fade_in(duration)
             self.task(cleanup, duration + .5)
 
-
         # cancel any fades that may be going one
         self.remove_animations_of(self)
         self.remove_animations_of(cleanup)
