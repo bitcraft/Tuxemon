@@ -21,6 +21,7 @@ class LoadMenuState(SaveMenuState):
             save_data["error"] = "Save file corrupted"
             logger.error("Failed loading save file.")
 
+        # TODO: Move to own module and make an event action
         if save_data is not None and "error" not in save_data:
             self.save_data = save.load(self.selected_index + 1)
             self.game.player1 = prepare.player1

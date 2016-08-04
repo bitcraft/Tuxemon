@@ -74,7 +74,7 @@ def main():
         control.push_state("FadeInTransition")
 
     # block of code useful for testing
-    if 0:
+    if 1:
         import random
         from core.components.event.actions.player import Player
         from core.components.technique import Technique
