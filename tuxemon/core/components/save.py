@@ -23,12 +23,12 @@
 # Contributor(s):
 #
 # William Edwards <shadowapex@gmail.com>
+# Leif Theden <leif.theden@gmail.com>
 #
 #
 # core.components.save Handle save games.
 #
 #
-
 import datetime
 import json
 import logging
@@ -50,16 +50,26 @@ logger = logging.getLogger(__name__)
 # TODO: move to a config somewhere?
 screenshot_fmt = ".png"
 
+
+class JSONPersistance(object):
+    """ This class is used to save and restore game state using a json formatted file
+    """
+    pass
+
+
 def encode_surface(surface):
     """ Encode a surface so that it is suitable to be embedded in json
 
+    Encodes a pygame surface into base64 encoded png.
+
     :type surface: pygame.Surface
-    :rtype: basestring
+    :rtype: dict
     """
     # somewhat convoluted way to store compressed images in json.
     # pygame can only write compressed image data to a file,
-    # so we do some gymnastics to get that data into memory
-    # tostring/fromsrting is more straightforward, but isn't compressed
+    # so we do some gymnastics to get that data into memory.
+    # using tostring/fromstring is more straightforward, but
+    # only stores uncompressed images.
 
     # get a temporary file for the image
     fn = tempfile.NamedTemporaryFile(suffix=screenshot_fmt, delete=False)
@@ -67,7 +77,7 @@ def encode_surface(surface):
     # use pygame to save our image
     pygame.image.save(surface, fn.name)
 
-    # read the data
+    # read the image data
     with fn as fp:
         data = fp.read()
 
@@ -77,11 +87,14 @@ def encode_surface(surface):
     # get the image data as b64 encoded UTF-8 for json
     image_data = b64encode(data).decode('UTF-8')
 
-    return {'fmt': screenshot_fmt,
-            'data': image_data}
+    return {'fmt': screenshot_fmt, 'data': image_data}
+
 
 def decode_surface(im_data):
     """ Decode data from json, return surface
+
+    im_data['data'] => basestring, base64 encoded image
+    im_data['fmt']  => basestring, filename suffix for image type (ie 'png')
 
     :type im_data: dict
     :rtype: pygame.Surface
@@ -89,23 +102,22 @@ def decode_surface(im_data):
     data = BytesIO(b64decode(im_data['data']))
     return pygame.image.load(data, im_data['fmt'])
 
+
 def save(player, screenshot, slot, game):
     """Saves the current game state to a file using shelve.
 
+    :param screenshot: Screenshot to embed into the file
     :param player: The player object that contains data to save.
     :param slot: The save slot to save the data to.
     :param game: The core.control.Control object that runs the game.
 
+    :type screenshot: pygame.Surface
     :type player: core.components.player.Player
     :type slot: Integer
     :type game: core.control.Control
 
     :rtype: None
     :returns: None
-
-    **Examples:**
-
-    >>> core.components.save.save(player1, 2, self)
 
     """
     # this dictionary will be serialized to the save file
@@ -149,6 +161,7 @@ def save(player, screenshot, slot, game):
 
     logger.info("Saving data to save file: " + prepare.SAVE_PATH + str(slot) + '.save')
 
+
 def save_monster(mon):
     """Prepares a dictionary of the monster to be saved to a file
 
@@ -170,6 +183,7 @@ def save_monster(mon):
             save_data[key] = value
     return save_data
 
+
 def save_body(body):
     """Prepares a dictionary of the body to be saved to a file
 
@@ -182,6 +196,7 @@ def save_body(body):
     save_data = dict(body.__dict__)
     return save_data
 
+
 def load(slot):
     """Loads game state data from a shelved save file.
 
@@ -190,10 +205,6 @@ def load(slot):
 
     :rtype: Dictionary
     :returns: Dictionary containing game data to load.
-
-    **Examples:**
-
-    >>> core.components.load.load(1)
 
     """
     # this check is required since opening a shelve will
@@ -207,10 +218,10 @@ def load(slot):
     with open(save_path) as fp:
         json_data = json.load(fp)
 
-    saveData = dict()
+    save_data = dict()
 
-    saveData['inventory'] = [load_item(i) for i in json_data['inventory']]
-    saveData['monsters'] = [load_monster(i) for i in json_data['monsters']]
+    save_data['inventory'] = [load_item(i) for i in json_data['inventory']]
+    save_data['monsters'] = [load_monster(i) for i in json_data['monsters']]
 
     # TODO: unify loading and game instancing
     # Loop through the storage item keys and re-add the surface.
@@ -237,15 +248,16 @@ def load(slot):
         else:
             tempstorage[keys] = values
 
-    saveData['storage'] = tempstorage
-    saveData['game_variables'] = json_data['game_variables']
-    saveData['tile_pos'] = json_data['tile_pos']
-    saveData['current_map'] = json_data['current_map']
-    saveData['player_name'] = json_data['player_name']
-    saveData['time'] = json_data['time']
-    saveData['screenshot'] = decode_surface(json_data['screenshot'])
+    save_data['storage'] = tempstorage
+    save_data['game_variables'] = json_data['game_variables']
+    save_data['tile_pos'] = json_data['tile_pos']
+    save_data['current_map'] = json_data['current_map']
+    save_data['player_name'] = json_data['player_name']
+    save_data['time'] = json_data['time']
+    save_data['screenshot'] = decode_surface(json_data['screenshot'])
 
-    return saveData
+    return save_data
+
 
 def load_item(save_data):
     slot = dict()
@@ -253,6 +265,7 @@ def load_item(save_data):
     tempinv1['quantity'] = save_data['']
     tempinv[tempinv1['item'].slug] = tempinv1
     return slot
+
 
 def load_monster(save_data):
     """Loads information from saved data
@@ -275,6 +288,7 @@ def load_monster(save_data):
         else:
             setattr(save_data, key, value)
     monster.load_sprites()
+
 
 def load_body(body, save_data):
     """Loads information from saved data

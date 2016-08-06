@@ -19,6 +19,7 @@ trans = translator.translate
 logger = logging.getLogger(__name__)
 logger.debug("%s successfully imported" % __name__)
 
+
 class SaveMenuState(PopUpMenu):
     number_of_slots = 3
     shrink_to_items = True
