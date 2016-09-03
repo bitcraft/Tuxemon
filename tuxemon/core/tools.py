@@ -27,20 +27,21 @@
 # Leif Theden <leif.theden@gmail.com>
 #
 #
+from __future__ import absolute_import
 from __future__ import division
 
 import logging
 import operator
 import os.path
+from itertools import product
 
 import pygame
 
-import core.components.sprite
-
-#import prepare
-#Changed to this because of a import error
+# import prepare
+# Changed to this because of a import error
 from core import prepare
 
+import core.components.sprite
 from core.platform import mixer
 
 # Create a logger for optional handling of debug messages.
@@ -266,6 +267,21 @@ def convert_alpha_to_colorkey(surface, colorkey=(255, 0, 255)):
     return image
 
 
+def make_shadow_surface(surface, color=(0, 0, 0, 96)):
+    """create a surface suitable to be used as a shadow
+
+    slow.  use once and cache the result
+    image must have alpha channel or results are undefined
+    """
+    w, h = surface.get_size()
+    shad = pygame.Surface((w, h), flags=pygame.SRCALPHA)
+    mask = pygame.mask.from_surface(surface)
+    for pixel in product(range(w), range(h)):
+        if mask.get_at(pixel):
+            shad.set_at(pixel, color)
+    return shad
+
+
 def check_parameters(parameters, required=0, exit=True):
     """
     Checks to see if a given list has the required number of items
@@ -292,6 +308,7 @@ def load_sound(filename):
     :type filename: basestring
     :rtype: core.platform.mixer.Sound
     """
+
     class DummySound(object):
         def play(self):
             pass
@@ -304,7 +321,7 @@ def load_sound(filename):
         raise ValueError
     try:
         return mixer.Sound(filename)
-    except MemoryError:   # raised on some systems if there is no mixer
+    except MemoryError:  # raised on some systems if there is no mixer
         return DummySound()
     except pygame.error:  # raised on some systems is there is no mixer
         return DummySound()
@@ -323,11 +340,13 @@ def calc_dialog_rect(screen_rect):
     return rect
 
 
-def open_dialog(game, text, menu = None):
+def open_dialog(game, text, menu=None):
     """ Open a dialog with the standard window size
 
     :param game:
     :param text: list of strings
+    :param menu:
+
     :rtype: State
     """
     rect = calc_dialog_rect(game.screen.get_rect())
