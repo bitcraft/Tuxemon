@@ -95,6 +95,8 @@ def main():
     #    for i in range(100):
     #        Player().add_item(control, add_item('item_apple'), None)
 
+    control.push_state("MonsterInfoState")
+
     control.main()
     pygame.quit()
 
