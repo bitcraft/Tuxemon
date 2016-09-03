@@ -27,20 +27,21 @@
 # Leif Theden <leif.theden@gmail.com>
 #
 #
+from __future__ import absolute_import
 from __future__ import division
 
 import logging
 import operator
 import os.path
 import re
-
-import pygame
+from itertools import product
 from six.moves import zip_longest
 
-import core.components.sprite
+import pygame
+
 from core import prepare
-from core.components import pyganim
 from core.platform import mixer
+import core.components.sprite
 
 # Create a logger for optional handling of debug messages.
 logger = logging.getLogger(__name__)
@@ -312,6 +313,21 @@ def convert_alpha_to_colorkey(surface, colorkey=(255, 0, 255)):
     return image
 
 
+def make_shadow_surface(surface, color=(0, 0, 0, 96)):
+    """create a surface suitable to be used as a shadow
+
+    slow.  use once and cache the result
+    image must have alpha channel or results are undefined
+    """
+    w, h = surface.get_size()
+    shad = pygame.Surface((w, h), flags=pygame.SRCALPHA)
+    mask = pygame.mask.from_surface(surface)
+    for pixel in product(range(w), range(h)):
+        if mask.get_at(pixel):
+            shad.set_at(pixel, color)
+    return shad
+
+
 def check_parameters(parameters, required=0, exit=True):
     """
     Checks to see if a given list has the required number of items
@@ -379,6 +395,8 @@ def open_dialog(game, text, menu=None):
 
     :param game:
     :param text: list of strings
+    :param menu:
+
     :rtype: State
     """
     rect = calc_dialog_rect(game.screen.get_rect())
