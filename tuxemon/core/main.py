@@ -74,7 +74,7 @@ def main():
         control.push_state("FadeInTransition")
 
     # block of code useful for testing
-    if 0:
+    if 1:
         import random
         from core.components.event.actions.player import Player
         from core.components.technique import Technique
@@ -96,15 +96,10 @@ def main():
 
         for monster in control.player1.monsters:
             monster.hp = 100
-            monster.current_hp = 1
-            # monster.current_hp = random.randint(1, 2)
+            monster.current_hp = random.randint(1, monster.hp)
             monster.apply_status(Technique("status_poison"))
 
-        # control.push_state("MonsterMenuState")
-
-        from core.components.event.actions.combat import Combat
-        start_battle = partial(adapter("random_encounter"))
-        Combat().random_encounter(control, start_battle(1))
+        control.push_state("MonsterInfoState")
 
     control.main()
     pygame.quit()
