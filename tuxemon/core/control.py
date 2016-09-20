@@ -38,7 +38,7 @@ class Control(StateManager):
         self.caption = caption
         self.done = False
         self.clock = pg.time.Clock()
-        self.fps = 60.0
+        self.fps = 30.0
         self.show_fps = True
         self.current_time = 0.0
         self.ishost = False

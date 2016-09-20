@@ -77,17 +77,27 @@ def main():
     if 1:
         import random
         from core.components.event.actions.player import Player
+        from core.components.monster import monsters as monster_db
         from core.components.technique import Technique
 
         # TODO: fix this player/player1 issue
+        # DEBUG ONLY.
         control.player1 = prepare.player1
-
+        names = {'Omnn', 'Luil', 'Tasv', 'Ykimi', 'Nood', 'Rakck', 'Eisso', 'Pheuth', 'Ouste', 'Iuntu', 'Oechi', 'Yerc', 'Iati', 'Ormth', 'Tad', 'Slit', 'Sloint', 'Uelma', 'Osst', 'Lley', 'Rer', 'Tar', 'Belr', 'Thrias', 'Idaro', 'Dom', 'Endr', 'Ildth', 'Myld', 'Einai', 'Osm', 'Zaert', 'Ekino', 'Aurna', 'Teih', 'Itono', 'Ehona', 'Adeny', 'Dyng', 'Eane', 'Odra', 'Denth', 'End', 'Torph', 'Nysn', 'Iac', 'Schient', 'Orilo', 'Lernd', 'Pollt', 'Aldck', 'Thel', 'Tech', 'Iomy', 'Neih', 'Seis', 'Zis', 'Puit', 'Aormo', 'Fieck', 'Beirr', 'Dynlt', 'Umnt', 'Yare', 'Untth', 'Tons', 'Wart', 'Aene', 'Ranl', 'Smayd', 'Rherd', 'Eumi', 'Pheech', 'Rhal', 'Sez', 'Oathy', 'Kinlt', 'Elmg', 'Elery', 'Rank', 'Soy', 'Leip', 'Quoud', 'Yanga', 'Ati', 'Onalu', 'Souy', 'Tiant', 'Idyno', 'Englt', 'Ciz', 'Yatu', 'Enthrr', 'Rheund', 'Igari', 'Uara', 'Earda', 'Steic', 'Konn', 'Eete', 'Rhond', 'Oskeli', 'Umk', 'Ards', 'Snuck', 'Icha', 'Menn', 'Avesi', 'Baun', 'Ataie', 'Iougho', 'Unty', 'Ineh', 'Steip', 'Sulr', 'Isrt', 'Kek', 'Vers'}
         add_monster = partial(adapter("add_monster"))
-        Player().add_monster(control, add_monster('txmn_bigfin', 10))
-        Player().add_monster(control, add_monster('txmn_dollfin', 10))
-        Player().add_monster(control, add_monster('txmn_rockitten', 10))
-        Player().add_monster(control, add_monster('txmn_nut', 10))
-        Player().add_monster(control, add_monster('txmn_sumobug', 10))
+        all_monster_slugs = set()
+        for i in range(30):
+            try:
+                slug = all_monster_slugs.pop()
+            except KeyError:
+                all_monster_slugs = set(monster_db.database["monster"].keys())
+                all_monster_slugs.remove('txmn_template')
+                slug = all_monster_slugs.pop()
+            level = random.randint(1, 21)
+            Player().add_monster(control, add_monster(slug, level))
+
+        for monster in control.player1.monsters:
+            monster.name = names.pop()
 
         add_item = partial(adapter("add_item"))
         Player().add_item(control, add_item('item_potion', 1))
@@ -118,3 +128,4 @@ def headless():
     control.auto_state_discovery()
     control.push_state("HeadlessServerState")
     control.main()
+

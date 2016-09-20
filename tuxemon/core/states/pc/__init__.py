@@ -54,7 +54,7 @@ trans = translator.translate
 def add_menu_items(state, items):
     for key, callback in items:
         label = trans(key).upper()
-        state.build_item(label, callback)
+        state.build_text_item(label, callback)
 
 
 class PCState(PopUpMenu):

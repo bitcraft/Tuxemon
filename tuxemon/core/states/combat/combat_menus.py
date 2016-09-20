@@ -11,7 +11,8 @@ from core.components.locale import translator
 from core.components.menu import PopUpMenu
 from core.components.menu.interface import MenuItem
 from core.components.menu.menu import Menu
-from core.components.sprite import SpriteGroup, MenuSpriteGroup
+from core.components.sprite import SpriteGroup
+from core.components.ui.layout import MenuLayout
 from core.components.technique import Technique
 from core.components.ui.draw import GraphicBox
 
@@ -176,7 +177,7 @@ class CombatTargetMenuState(Menu):
 
     def create_new_menu_items_group(self):
         # these groups will not automatically position the sprites
-        self.menu_items = MenuSpriteGroup()
+        self.menu_items = MenuLayout()
         self.menu_sprites = SpriteGroup()
 
     def startup(self, *args, **kwargs):
