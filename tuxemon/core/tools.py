@@ -27,6 +27,12 @@
 # Leif Theden <leif.theden@gmail.com>
 #
 #
+"""
+
+This module is a random collection of things that don't currently
+have a home somewhere else.  It is the Tuxemon codebase junk drawer.
+
+"""
 from __future__ import absolute_import
 from __future__ import division
 
@@ -45,6 +51,99 @@ import core.components.sprite
 
 # Create a logger for optional handling of debug messages.
 logger = logging.getLogger(__name__)
+
+# map of axis names to the named edges along a pygame rect
+axis_rect_edge_map = {"y": {"top", "bottom"}, "x": {"left", "right"}}
+
+
+def calc_scroll_thing(rect, group, bounds):
+    """ Very poorly named.  See description.
+
+    Given a rect, group rect and bounding box, return a dictionary
+    that describes the movement along any axis that will cause the
+    rect to be contained fully inside the bounds.
+
+    :type rect: pygame.Rect
+    :type group: pygame.Group
+    :type bounds: pygame.Rect
+    :rtype: dict
+    """
+    # check if the selected thing is outside the screen
+    if bounds.contains(rect):
+        return None
+
+    # get a list of axes that are allowed to scroll
+    scroll_axes = calc_scroll_freedom(group, bounds)
+
+    # only calculate changes if the menu is able to scroll
+    if scroll_axes:
+        # get which quadrant the selected item is in in relation to the screen
+        quadrants = calc_quadrant(rect, bounds)
+
+        diff = dict()
+        for axis in scroll_axes:
+            # for each axis, get the quadrant that the menu item is in
+            # then determine the distance needed to move the scrollable
+            # region so that the edges match and rect is contained in bounds
+            d = axis_rect_edge_map[axis].intersection(quadrants).pop()
+            diff[d] = getattr(bounds, d) - getattr(rect, d)
+
+        return diff
+
+    else:
+        return None
+
+
+def calc_scroll_freedom(rect, parent):
+    """ Very poorly named.  See description.
+
+    Given a rect and a parent, return any axis that the
+    the rect could move, if constrained by the parent rect.
+
+    This is used to determine valid movements for scrolling
+    regions.
+
+    :type rect: pygame.Rect
+    :type parent: pygame.Rect
+    :rtype: list
+    """
+    x = rect.width > parent.width
+    y = rect.height > parent.height
+
+    if x and y:
+        return {'x', 'y'}
+    elif x:
+        return {'x'}
+    elif y:
+        return {'y'}
+    else:
+        return None
+
+
+def calc_quadrant(rect, parent):
+    """ Determine which quadrant (n, e, s, w) the rect is in
+
+    Uses pygame Rect terms: "top bottom left right"
+
+    If return value is empty set, then the rects overlap exactly
+
+    :type rect: pygame.Rect
+    :type parent: pygame.Rect
+    :rtype: set
+    """
+    q = set()
+
+    if rect.centerx > parent.centerx:
+        q.add("right")
+    elif rect.centerx < parent.centerx:
+        q.add("left")
+
+    if rect.centery > parent.centery:
+        q.add("bottom")
+    elif rect.centery < parent.centery:
+        q.add("top")
+
+    return q
 
 
 def strip_from_sheet(sheet, start, size, columns, rows=1):
@@ -391,9 +490,11 @@ def calc_dialog_rect(screen_rect):
 
 
 def open_dialog(game, text, menu=None):
-    """ Open a dialog with the standard window size
+    """ Open a dialog along the bottom edge of the screen
 
-    :param game:
+    This dialog is typically used for spoken words between characters.
+
+    :type game: core.control.Control
     :param text: list of strings
     :param menu:
 
@@ -401,3 +502,19 @@ def open_dialog(game, text, menu=None):
     """
     rect = calc_dialog_rect(game.screen.get_rect())
     return game.push_state("DialogState", text=text, rect=rect, menu=menu)
+
+
+def open_info_dialog(game, text, menu=None):
+    """ Open a dialog in the center of the screen
+
+    This dialog is typically used for messages from the game to the player.
+
+    :type game: core.control.Control
+    :param text: list of strings
+    :param menu:
+
+    :rtype: State
+    """
+    state = game.push_state("DialogState", text=text, menu=menu)
+    state.shrink_to_items = True
+    return state

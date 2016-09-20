@@ -7,9 +7,10 @@ from functools import partial
 import pygame
 
 from core import state, prepare, tools
+from core.components.animation import remove_animations_of
 from core.components.menu.interface import MenuCursor, MenuItem
-from core.components.sprite import VisualSpriteList, RelativeGroup
 from core.components.ui.draw import GraphicBox
+from core.components.ui.layout import RelativeLayout, GridLayout
 from core.components.ui.text import TextArea
 
 
@@ -80,11 +81,11 @@ class Menu(state.State):
         :return: None
         """
         # contains the selectable elements of the menu
-        self.menu_items = VisualSpriteList(parent=self.calc_menu_items_rect)
+        self.menu_items = GridLayout(parent=self.calc_menu_items_rect)
         self.menu_items.columns = self.columns
 
         # generally just for the cursor arrow
-        self.menu_sprites = RelativeGroup(parent=self.menu_items)
+        self.menu_sprites = RelativeLayout(parent=self.menu_items)
 
     def shutdown(self):
         """ Clear objects likely to cause cyclical references
@@ -183,7 +184,7 @@ class Menu(state.State):
             if self.menu_items and self.selected_index >= number_items:
                 self.change_selection(number_items - 1)
 
-    def build_item(self, label, callback, icon=None):
+    def build_text_item(self, label, callback, icon=None):
         """ Create a menu item and add it to the menu
 
         :param label: Some text
@@ -236,7 +237,7 @@ class Menu(state.State):
         """
         self.menu_select_sound = tools.load_sound(self.menu_select_sound_filename)
 
-    def shadow_text(self, text, bg=(0, 0, 0, 192)):
+    def shadow_text(self, text, bg=(192, 192, 192)):
         """ Draw shadowed text
 
         :param text: Text to draw
@@ -244,14 +245,37 @@ class Menu(state.State):
         :returns:
         """
         top = self.font.render(text, 1, self.font_color)
-        shadow = self.font.render(text, 1, (0, 0, 0, 192)).convert_alpha()
+        shadow = self.font.render(text, 1, bg)
 
+        # equals about 1 'pixel'
         offset = layout((0.5, 0.5))
         size = [int(math.ceil(a + b)) for a, b in zip(offset, top.get_size())]
         image = pygame.Surface(size, pygame.SRCALPHA)
 
         image.blit(shadow, offset)
         image.blit(top, (0, 0))
+        return image
+
+    def bubble_text(self, text, bg=(192, 192, 192)):
+        """ Draw text with a thin border
+
+        :param text: Text to draw
+        :param bg:
+        :returns:
+        """
+        top = self.font.render(text, 1, (240, 240, 240))
+        back = self.font.render(text, 1, bg)
+
+        offset = layout((1, 1))
+        size = [int(math.ceil(a + b)) for a, b in zip(offset, top.get_size())]
+        image = pygame.Surface(size, pygame.SRCALPHA)
+
+        # equals about 1 'pixel'
+        for x in range(int(offset[0] * 2)):
+            for y in range(int(offset[1] * 2)):
+                image.blit(back, (x, y))
+
+        image.blit(top, offset)
         return image
 
     def load_graphics(self):
@@ -373,6 +397,7 @@ class Menu(state.State):
         self.line_spacing = tools.scale(line_spacing)
         self.font_size = tools.scale(size)
         self.font_color = color
+
         self.font = pygame.font.Font(font, self.font_size)
 
     def calc_internal_rect(self):
@@ -455,8 +480,39 @@ class Menu(state.State):
         self.selected_index = index                # update the selection index
         self.menu_select_sound.play()              # play a sound
         self.trigger_cursor_update(animate)        # move cursor and [maybe] animate it
+        self.check_bounds()                        # scroll items if off the screen
         self.get_selected_item().in_focus = True   # set focus flag of new item
         self.on_menu_selection_change()            # let subclass know menu has changed
+
+    def check_bounds(self):
+        """ Check if the currently selected item is off screen, and animate to show it
+
+        This is essentially: scrolling the menu items if the items are off screen
+
+        WIP
+
+        :return: None
+        """
+        screen_rect = self.rect
+
+        # TODO: unify the menu_rect attribute, or move menu to own widget
+        menu_rect = self.menu_items.calc_bounding_rect()
+
+        if not hasattr(self, "menu_rect"):
+            return
+
+        # get the selected item, if any
+        selected = self.get_selected_item()
+        if not selected:
+            return
+
+        # transform coordinates to screen space
+        selected_rect = self.menu_items.calc_absolute_rect(selected.rect)
+
+        diff = tools.calc_scroll_thing(selected_rect, menu_rect, self.rect)
+        if diff:
+            remove_animations_of(menu_rect, self.animations)
+            self.animate(self.menu_rect, duration=.25, relative=True, **diff)
 
     def search_items(self, game_object):
         """ Non-optimised search through menu_items for a particular thing

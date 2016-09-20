@@ -637,7 +637,6 @@ class Player(object):
         # Return a list of all the collision tiles around the player.
         return collisions
 
-
     def add_monster(self, monster):
         """Adds a monster to the player's list of monsters. If the player's party is full, it
         will send the monster to PCState archive.
@@ -650,20 +649,17 @@ class Player(object):
         :returns: None
 
         """
-
-        if len(self.monsters) >= self.party_limit:
-            print("Send to PCState")
-            self.storage["monsters"].append(monster)
-        else:
-            self.monsters.append(monster)
+        self.monsters.append(monster)
+        # if len(self.monsters) >= self.party_limit:
+        #     print("Send to PCState")
+        #     self.storage["monsters"].append(monster)
+        # else:
+        #     self.monsters.append(monster)
 
     def find_monster(self, slug):
         """Finds a monster in the player's list of monsters.
 
-        :param slug: The stug name of the monster
-
-        :type string: String
-
+        :param slug: The slug name of the monster
         :rtype: core.components.monster.Monster
         :returns: Monster found
 

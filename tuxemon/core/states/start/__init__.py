@@ -36,9 +36,10 @@ from functools import partial
 
 from core import prepare
 from core.state import State
-from core.components.menu.interface import MenuItem
 from core.components.menu.menu import PopUpMenu
 from core.components.locale import translator
+
+trans = translator.translate
 
 # Create a logger for optional handling of debug messages.
 logger = logging.getLogger(__name__)
@@ -76,7 +77,7 @@ class StartState(PopUpMenu):
         def new_game():
             self.game.player1 = prepare.player1
             self.game.replace_state("WorldState")
-            self.game.push_state("InputMenu", prompt=translator.translate("input_name"))
+            self.game.push_state("InputMenu", prompt=trans("input_name"))
             self.game.push_state("FadeInTransition")
 
         def options():
@@ -93,7 +94,4 @@ class StartState(PopUpMenu):
         )
 
         for key, callback in menu_items_map:
-            label = translator.translate(key).upper()
-            image = self.shadow_text(label)
-            item = MenuItem(image, label, None, callback)
-            self.add(item)
+            self.build_text_item(trans(key).upper(), callback)
