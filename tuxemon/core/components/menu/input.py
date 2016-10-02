@@ -120,9 +120,10 @@ class InputMenu(Menu):
     def confirm(self):
         """ Confirm the input
 
-        This is called when user selects "End".  Override, maybe?
+        This is called when user selects "End".
+        An input_event will be emitted with inputted string
 
-        :return:
+        :return: None
         """
         input_event(self.input_string)
         self.game.pop_state(self)

@@ -1,9 +1,36 @@
+# -*- coding: utf-8 -*-
+#
+# Tuxemon
+# Copyright (C) 2014, William Edwards <shadowapex@gmail.com>,
+#                     Benjamin Bean <superman2k5@gmail.com>
+#
+# This file is part of Tuxemon.
+#
+# Tuxemon is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Tuxemon is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Tuxemon.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contributor(s):
+#
+# William Edwards <shadowapex@gmail.com>
+# Leif Theden <leif.theden@gmail.com>
+#
+#
 from __future__ import division
 
 import pygame
 
-from core.components.ui import draw
 from core.components.sprite import Sprite
+from core.components.ui import draw
 
 min_font_size = 7
 
@@ -170,7 +197,7 @@ def draw_text(surface, text=None, rect=None, justify="left", align=None,
     if justify == "center":
         if lines:
             left = (left + (width / 2)) - \
-                    ((len(lines[0]) * pixels_per_letter) / 2)
+                   ((len(lines[0]) * pixels_per_letter) / 2)
         else:
             left = 0
 
@@ -180,7 +207,7 @@ def draw_text(surface, text=None, rect=None, justify="left", align=None,
     # If text alignment was set, handle the position of the text automatically
     if align == "middle":
         top = (top + (height / 2)) - \
-                ((text_surface.get_height() * len(lines)) / 2)
+              ((text_surface.get_height() * len(lines)) / 2)
 
     elif align == "bottom":
         raise NotImplementedError("Needs to be implemented")

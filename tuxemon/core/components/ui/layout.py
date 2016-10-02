@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Tuxemon
@@ -34,7 +33,14 @@ import pygame
 from core.components.sprite import SpriteGroup
 
 
-class MenuLayout(SpriteGroup):
+class Layout(SpriteGroup):
+    """
+    Layouts contain widgets and position them.
+    """
+    pass
+
+
+class MenuLayout(Layout):
     """
     Sprite Group to be used for menus.
 
@@ -154,7 +160,7 @@ class MenuLayout(SpriteGroup):
         return index
 
 
-class RelativeLayout(SpriteGroup):
+class RelativeLayout(Layout):
     """
     Drawing operations are relative to the group's rect
     """
@@ -295,5 +301,3 @@ class GridLayout(RelativeLayout, MenuLayout):
         for index, item in enumerate(self.sprites()):
             oy, ox = divmod(index, self.columns)
             item.rect.topleft = ox * column_spacing, oy * line_spacing
-
-
