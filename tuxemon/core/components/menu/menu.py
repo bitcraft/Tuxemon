@@ -1,3 +1,29 @@
+# -*- coding: utf-8 -*-
+#
+# Tuxemon
+# Copyright (C) 2014, William Edwards <shadowapex@gmail.com>,
+#                     Benjamin Bean <superman2k5@gmail.com>
+#
+# This file is part of Tuxemon.
+#
+# Tuxemon is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Tuxemon is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Tuxemon.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contributor(s):
+#
+# Leif Theden <leif.theden@gmail.com>
+#
+#
 from __future__ import division
 from __future__ import print_function
 
@@ -6,12 +32,13 @@ from functools import partial
 
 import pygame
 
-from core import state, prepare, tools
+from core import prepare, tools
 from core.components.animation import remove_animations_of
 from core.components.menu.interface import MenuCursor, MenuItem
 from core.components.ui.draw import GraphicBox
 from core.components.ui.layout import RelativeLayout, GridLayout
 from core.components.ui.text import TextArea
+from core.components.ui.window import Window
 
 
 def layout(scale):
@@ -24,7 +51,7 @@ def layout(scale):
 layout = layout(prepare.SCALE)
 
 
-class Menu(state.State):
+class Menu(Window):
     """ A class to create menu objects.
 
     Menus are a type of game state.  Menus that are the top state
@@ -41,23 +68,17 @@ class Menu(state.State):
     # defaults for the menu
     columns = 1
     min_font_size = 4
-    draw_borders = True
-    background = None                 # Image used to draw the background
-    background_color = 248, 248, 248  # The window's background color
-    background_filename = None        # File to load for image background
     menu_select_sound_filename = "sounds/interface/menu-select.ogg"
     font_filename = "resources/font/PressStart2P.ttf"
-    borders_filename = "gfx/dialog-borders01.png"
     cursor_filename = "gfx/arrow.png"
     cursor_move_duration = .20
     default_character_delay = 0.05
-    shrink_to_items = False    # fit the border to contents
-    escape_key_exits = True    # escape key closes menu
     animate_contents = False   # show contents while window opens
     touch_aware = False        # if true, then menu items can be selected with the mouse/touch
 
     def startup(self, *items, **kwargs):
-        self.rect = self.rect.copy()  # do not remove!
+        super(Menu, self).startup(*items, **kwargs)
+
         self.selected_index = 0       # track which menu item is selected
         self.state = "closed"         # closed, opening, normal, disabled, closing
         self.window = None            # draws borders, background

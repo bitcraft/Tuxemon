@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Tuxemon
@@ -28,12 +27,11 @@
 # core.components.ui.bar UI bar handling module.
 #
 #
-
 import logging
+
 import pygame
 
 from core.components.ui import UserInterface
-from ... import prepare
 
 # Create a logger for optional handling of debug messages.
 logger = logging.getLogger(__name__)
@@ -55,6 +53,7 @@ class Bar(UserInterface):
     :type value: Float
 
     """
+
     def __init__(self, position, animation_speed=0.2):
         color = 0, 255, 0
         self.surface = pygame.Surface((100, 3))
@@ -96,5 +95,3 @@ class Bar(UserInterface):
                 self.animation.scale((width, height))
 
         self.__dict__[key] = value
-
-

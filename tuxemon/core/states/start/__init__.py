@@ -36,6 +36,7 @@ from functools import partial
 
 from core import prepare
 from core.state import State
+from core.components.event.actions import core as core_actions
 from core.components.menu.menu import PopUpMenu
 from core.components.locale import translator
 
@@ -84,7 +85,7 @@ class StartState(PopUpMenu):
             pass
 
         def exit_game():
-            self.game.exit = True
+            core_actions.Core().quit(self.game, None)
 
         menu_items_map = (
             ('menu_new_game', new_game),

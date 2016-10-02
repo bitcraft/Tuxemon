@@ -35,6 +35,8 @@ from core.components.pyganim import PygAnimation
 
 
 class Sprite(pygame.sprite.DirtySprite):
+    """ Tuxemon Sprite
+    """
     dirty = False
 
     def __init__(self, *args, **kwargs):
