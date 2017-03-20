@@ -43,8 +43,8 @@ from core.components.locale import translator
 from core.components.pyganim import PygAnimation
 from core.components.sprite import Sprite
 from core.components.technique import Technique
-from core.components.ui.draw import GraphicBox
-from core.components.ui.text import TextArea
+from core.components.ui.graphicbox import GraphicBox
+from core.components.ui.textarea import TextArea
 from .combat_animations import CombatAnimations
 
 trans = translator.translate

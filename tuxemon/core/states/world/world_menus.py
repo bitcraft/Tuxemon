@@ -9,7 +9,7 @@ from core import prepare
 from core.tools import open_dialog
 from core.components.event.actions import core as core_actions
 from core.components.menu.interface import MenuItem
-from core.components.menu.menu import Menu
+from core.components.ui.menu import Menu
 from core.components.locale import translator
 
 # Create a logger for optional handling of debug messages.

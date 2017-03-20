@@ -29,13 +29,14 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import pygame
+import pygame as pg
 
 from core import tools
 from core.components.menu.interface import MenuItem, HorizontalBar
-from core.components.menu.menu import Menu
-from core.components.ui.draw import GraphicBox
-from core.components.ui.text import TextArea
+from core.components.ui.menu import Menu
+from core.components.ui.graphicbox import GraphicBox
+from core.components.ui.textarea import TextArea
+from core.components.ui.font import bubble_text, shadow_text
 
 
 class MonsterInfoState(Menu):
@@ -48,22 +49,32 @@ class MonsterInfoState(Menu):
     def startup(self, **kwargs):
         super(MonsterInfoState, self).startup(**kwargs)
 
-        self._calced = False
+        # load and scale the _background
+        background = None
+        if self.background_filename:
+            background = tools.load_image(self.background_filename)
+
+        # load and scale the menu borders
+        border = None
+        if self.draw_borders:
+            border = tools.load_and_scale(self.borders_filename)
+
+        # set the helper to draw the _background
+        self.window = GraphicBox(border, background, (12, 222, 222))
+        self.window.rect = pg.Rect(0, 0, 700, 700)
+
+        self.add_widget(self.window)
 
         # make a text area to show messages
         self.text_area = TextArea(self.font, self.font_color, (96, 96, 96))
-        self.text_area.rect = pygame.Rect(tools.scale_sequence([20, 80, 80, 100]))
+        self.text_area.rect = pg.Rect(tools.scale_sequence([20, 80, 80, 100]))
         self.sprites.add(self.text_area, layer=100)
 
         # Set up the border images used for the monster slots
         self.monster_slot_border = {}
-        self.bar = HorizontalBar()
+        # self.bar = HorizontalBar()
 
-        self.menu_items.columns = 4
-
-        # ui elements
-        # TODO: some system to manage these better
-        self.children = dict()
+        self.columns = 4
 
         # load and scale the monster slot borders
         root = "gfx/ui/monster/"
@@ -75,50 +86,23 @@ class MonsterInfoState(Menu):
             filename = root + border_type + "_monster_slot_bg.png"
             background = tools.load_image(filename)
 
-            window = GraphicBox(border, background, None)
-            self.monster_slot_border[border_type] = window
+            # window = GraphicBox(border, background, None)
+            # self.monster_slot_border[border_type] = window
 
         # TODO: something better than this global, load_sprites stuff
         for monster in self.game.player1.monsters:
             monster.load_sprites()
-
-    def calc_menu_items_rect(self):
-        if self._calced:
-            return self.menu_rect
-
-        self._calced = True
-        width, height = self.rect.size
-        width *= .8
-        height *= .9
-
-        height *= 4
-
-        rect = pygame.Rect(0, 0, width, height)
-        rect.center = self.rect.center
-
-        rect.top = 0
-
-        self.menu_rect = rect
-
-        return rect
-
-    def initialize_items(self):
-        self.animations.empty()
 
         width = tools.scale(40)
         height = tools.scale(40)
 
         # make 6 slots
         for i in range(30):
-            rect = pygame.Rect(0, 0, width, height)
-            surface = pygame.Surface(rect.size, pygame.SRCALPHA)
+            rect = pg.Rect(0, 0, width, height)
+            surface = pg.Surface(rect.size, pg.SRCALPHA)
+            self.render_monster_slot(surface, rect, self.game.player1.monsters[i], False)
             item = MenuItem(surface, None, None, None)
-            yield item
-
-        self.refresh_menu_items()
-
-    def on_menu_selection(self, menu_item):
-        pass
+            self.add_widget(item)
 
     def render_monster_slot(self, surface, rect, monster, in_focus):
         filled = monster is not None
@@ -126,23 +110,23 @@ class MonsterInfoState(Menu):
             self.draw_monster_info(surface, monster, rect)
         return surface
 
-    def refresh_menu_items(self):
-        """ Used to render slots after their 'focus' flags change
-
-        :return:
-        """
-        for index, item in enumerate(self.menu_items):
-            try:
-                monster = self.game.player1.monsters[index]
-            except IndexError:
-                monster = None
-            item.game_object = monster
-            item.enabled = monster is not None
-            item.image.fill((0, 0, 0, 0))
-            # TODO: Cleanup this hack
-            if index == self.selected_index:
-                item.in_focus = True
-            self.render_monster_slot(item.image, item.image.get_rect(), item.game_object, item.in_focus)
+    # def refresh_menu_items(self):
+    #     """ Used to render slots after their 'focus' flags change
+    #
+    #     :return:
+    #     """
+    #     for index, item in enumerate(self.children):
+    #         try:
+    #             monster = self.game.player1.monsters[index]
+    #         except IndexError:
+    #             monster = None
+    #         item.game_object = monster
+    #         item.enabled = monster is not None
+    #         item.image.fill((0, 0, 0, 0))
+    #         # TODO: Cleanup this hack
+    #         if index == self.selected_index:
+    #             item.in_focus = True
+    #         self.render_monster_slot(item.image, item.image.get_rect(), item.game_object, item.in_focus)
 
     def draw_monster_info(self, surface, monster, rect):
         """
@@ -160,13 +144,13 @@ class MonsterInfoState(Menu):
         hp_rect.bottom = rect.bottom
 
         # draw the hp bar
-        self.bar.value = monster.current_hp / monster.hp
-        self.bar.draw(surface, hp_rect)
+        # self.bar.value = monster.current_hp / monster.hp
+        # self.bar.draw(surface, hp_rect)
 
         # TODO: ANIMATION
         # generate a fun shadow
         shad = tools.make_shadow_surface(monster.sprites['menu'])
-        shad = pygame.transform.scale(shad, (shad.get_width(), shad.get_height() // 2))
+        shad = pg.transform.scale(shad, (shad.get_width(), shad.get_height() // 2))
 
         # position the monster sprite in the center
         monster_rect = monster.sprites['menu'].get_rect()
@@ -178,14 +162,14 @@ class MonsterInfoState(Menu):
         surface.blit(monster.sprites['menu'], monster_rect)
 
         # draw the name
-        text = self.shadow_text(monster.name)
+        text = shadow_text(self.font, monster.name)
         text_rect = text.get_rect()
         # text_rect.centerx = rect.centerx
         text_rect.midtop = monster_rect.midbottom
         surface.blit(text, text_rect)
 
         # draw the level
-        text = self.bubble_text(str(monster.level), (0, 0, 0))
+        text = bubble_text(self.font, str(monster.level), (0, 0, 0))
         text_rect = text.get_rect()
         text_rect.midleft = hp_rect.topleft
         text_rect.left += tools.scale(2)

@@ -1,6 +1,7 @@
 import pygame
 import this
-from tuxemon.core.components.ui import draw
+
+import core.components.ui.font
 
 if __name__ == "__main__":
     pygame.init()
@@ -13,7 +14,7 @@ if __name__ == "__main__":
     running = True
 
     while running:
-        for dirty, rect, surface in draw.iter_render_text(text, font, fg, bg, screen.get_rect()):
+        for dirty, rect, surface in core.components.ui.font.iter_render_text(text, font, fg, bg, screen.get_rect()):
             for e in pygame.event.get():
                 if e.type == pygame.QUIT:
                     running = False

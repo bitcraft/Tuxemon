@@ -55,6 +55,9 @@ logger = logging.getLogger(__name__)
 # map of axis names to the named edges along a pygame rect
 axis_rect_edge_map = {"y": {"top", "bottom"}, "x": {"left", "right"}}
 
+# font cache, since it is used often and slow to load
+_font_cache = dict()
+
 
 def calc_scroll_thing(rect, group, bounds):
     """ Very poorly named.  See description.
@@ -147,7 +150,7 @@ def calc_quadrant(rect, parent):
 
 
 def strip_from_sheet(sheet, start, size, columns, rows=1):
-    """Strips individual frames from a sprite sheet given a start location,
+    """ Strips individual frames from a sprite sheet given a start location,
     sprite size, and number of columns and rows."""
     frames = []
     for j in range(rows):
@@ -158,7 +161,7 @@ def strip_from_sheet(sheet, start, size, columns, rows=1):
 
 
 def strip_coords_from_sheet(sheet, coords, size):
-    """Strip specific coordinates from a sprite sheet."""
+    """ Strip specific coordinates from a sprite sheet."""
     frames = []
     for coord in coords:
         location = (coord[0] * size[0], coord[1] * size[1])
@@ -167,7 +170,7 @@ def strip_coords_from_sheet(sheet, coords, size):
 
 
 def get_cell_coordinates(rect, point, size):
-    """Find the cell of size, within rect, that point occupies."""
+    """ Find the cell of size, within rect, that point occupies."""
     cell = [None, None]
     point = (point[0] - rect.x, point[1] - rect.y)
     cell[0] = (point[0] // size[0]) * size[0]
@@ -176,7 +179,7 @@ def get_cell_coordinates(rect, point, size):
 
 
 def cursor_from_image(image):
-    """Take a valid image and create a mouse cursor."""
+    """ Take a valid image and create a mouse cursor."""
     colors = {(0, 0, 0, 255): "X",
               (255, 255, 255, 255): "."}
     rect = image.get_rect()
@@ -247,6 +250,49 @@ def load_image(filename):
     return smart_convert(pygame.image.load(filename))
 
 
+def load_font(filename, size):
+    """ Load font from the resources folder
+
+    * Filename will be transformed to be loaded from game resource folder
+    * Font will be no smaller thn the configured smallest size
+    * Font will be scaled to fit the screen
+
+    :param filename: String
+    :type size: int
+    :rtype: pygame.font.Font
+    """
+    # the next line determines where fonts are stored
+    filename = os.path.join('font', filename)
+    filename = transform_resource_filename(filename)
+    size = min(prepare.MIN_FONT_SIZE, size)
+    font_size = scale(size)
+    return pygame.font.Font(filename, font_size)
+
+
+def get_cached_font(filename, size):
+    """ Attempt to load a font from the cache.  Load if not found.
+
+    :param filename: String
+    :type size: int
+    :rtype: pygame.font.Font
+    """
+    key = filename, size
+    try:
+        return _font_cache[key]
+    except KeyError:
+        font = load_font(filename, size)
+        _font_cache[key] = font
+        return font
+
+
+def load_default_font():
+    """ Convenience function to load the default font
+
+    :rtype: pygame.font.Font
+    """
+    return get_cached_font(prepare.DEFAULT_FONT_FILENAME, prepare.DEFAULT_FONT_SIZE)
+
+
 def load_sprite(filename, **rect_kwargs):
     """ Load an image from disk and return a pygame sprite
 
@@ -259,7 +305,8 @@ def load_sprite(filename, **rect_kwargs):
     :param filename: Filename to load
     :rtype: core.components.sprite.Sprite
     """
-    sprite = core.components.sprite.Sprite()
+    from core.components.sprite import Sprite
+    sprite = Sprite()
     sprite.image = load_and_scale(filename)
     sprite.rect = sprite.image.get_rect(**rect_kwargs)
     return sprite

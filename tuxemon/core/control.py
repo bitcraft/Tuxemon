@@ -560,9 +560,6 @@ class Control(StateManager):
         # and a clock, not limited by fps will never work
         time_delta = self.clock.tick(self.fps) / 1000.0
 
-        time_delta = .16
-        time.sleep(.16)
-
         # cannot run clock unlimited as movement is broken at low resolution
         # time_delta = self.clock.tick() / 1000.0
 

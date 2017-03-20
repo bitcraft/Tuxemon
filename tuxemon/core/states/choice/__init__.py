@@ -1,10 +1,7 @@
 from __future__ import division
 
-import pygame
-
-from core.components.menu.menu import PopUpMenu
-from core.components.ui.text import TextArea
-from core.components.locale import translator
+from core.components.ui.popup import PopUpMenu
+from core.components.ui.font import shadow_text
 from core.components.menu.interface import MenuItem
 
 
@@ -25,6 +22,6 @@ class ChoiceState(PopUpMenu):
 
     def initialize_items(self):
         for key, label, callback in self.menu:
-            image = self.shadow_text(label)
+            image = shadow_text(self.font, label)
             item = MenuItem(image, label, None, callback)
             self.add(item)

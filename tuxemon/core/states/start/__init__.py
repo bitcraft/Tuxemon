@@ -37,7 +37,8 @@ from functools import partial
 from core import prepare
 from core.state import State
 from core.components.event.actions import core as core_actions
-from core.components.menu.menu import PopUpMenu
+from core.components.ui.popup import PopUpMenu
+from core.components.ui.menu import Menu
 from core.components.locale import translator
 
 trans = translator.translate
@@ -72,6 +73,9 @@ class StartState(PopUpMenu):
     def startup(self, *args, **kwargs):
         super(StartState, self).startup(*args, **kwargs)
 
+        menu = Menu()
+        self.add_widget(menu)
+
         def change_state(state, **kwargs):
             return partial(self.game.push_state, state, **kwargs)
 
@@ -95,4 +99,4 @@ class StartState(PopUpMenu):
         )
 
         for key, callback in menu_items_map:
-            self.build_text_item(trans(key).upper(), callback)
+            menu.build_text_item(trans(key).upper(), callback)
