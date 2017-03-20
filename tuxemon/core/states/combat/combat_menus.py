@@ -8,13 +8,14 @@ import pygame
 
 from core import tools
 from core.components.locale import translator
-from core.components.menu import PopUpMenu
+from core.components.ui.popup import PopUpMenu
 from core.components.menu.interface import MenuItem
-from core.components.menu.menu import Menu
+from core.components.ui.menu import Menu
 from core.components.sprite import SpriteGroup
 from core.components.ui.layout import MenuLayout
+from core.components.ui.graphicbox import GraphicBox
+from core.components.ui.font import shadow_text
 from core.components.technique import Technique
-from core.components.ui.draw import GraphicBox
 
 # Create a logger for optional handling of debug messages.
 logger = logging.getLogger(__name__)
@@ -40,7 +41,7 @@ class MainCombatMenuState(PopUpMenu):
 
         for key, callback in menu_items_map:
             label = translator.translate(key).upper()
-            image = self.shadow_text(label)
+            image = shadow_text(self.font, label)
             yield MenuItem(image, label, None, callback)
 
     def run(self):
@@ -134,7 +135,7 @@ class MainCombatMenuState(PopUpMenu):
 
             # add techniques to the menu
             for tech in self.monster.moves:
-                image = self.shadow_text(tech.name)
+                image = shadow_text(self.font, tech.name)
                 item = MenuItem(image, None, None, tech)
                 menu.add(item)
 

@@ -2,8 +2,8 @@ from __future__ import division
 
 import pygame
 
-from core.components.menu.menu import PopUpMenu
-from core.components.ui.text import TextArea
+from core.components.ui.popup import PopUpMenu
+from core.components.ui.textarea import TextArea
 
 
 class DialogState(PopUpMenu):

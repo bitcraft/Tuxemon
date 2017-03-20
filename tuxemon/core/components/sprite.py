@@ -27,17 +27,19 @@
 #
 from __future__ import division
 
-import pygame
+import pygame as pg
 from pygame.transform import rotozoom
 from pygame.transform import scale
 
 from core.components.pyganim import PygAnimation
+from core.components.ui.widget import Widget
 
 
-class Sprite(pygame.sprite.DirtySprite):
+class Sprite(Widget):
     """ Tuxemon Sprite
     """
     dirty = False
+    rect = pg.Rect(0, 0, 0, 0)
 
     def __init__(self, *args, **kwargs):
         super(Sprite, self).__init__(*args, **kwargs)
@@ -50,7 +52,7 @@ class Sprite(pygame.sprite.DirtySprite):
         self._needs_rescale = False
         self._needs_update = False
 
-    def draw(self, surface, rect=None):
+    def _draw(self, surface, rect=None):
         """ Draw the sprite to the surface
 
         This operation does not scale the sprite, so it may exceed
@@ -64,9 +66,10 @@ class Sprite(pygame.sprite.DirtySprite):
         # should draw to surface without generating a cached copy
         if rect is None:
             rect = surface.get_rect()
-        return self._draw(surface, rect)
+        return self.__draw(surface, rect)
 
-    def _draw(self, surface, rect):
+    def __draw(self, surface, rect):
+        self.update_image()
         return surface.blit(self._image, rect)
 
     @property
@@ -149,7 +152,7 @@ class Sprite(pygame.sprite.DirtySprite):
             self._needs_update = True
 
 
-class SpriteGroup(pygame.sprite.LayeredUpdates):
+class SpriteGroup(pg.sprite.LayeredUpdates):
     """ Sane variation of a pygame sprite group
 
     Features:
@@ -162,12 +165,12 @@ class SpriteGroup(pygame.sprite.LayeredUpdates):
     Variations from standard group:
     * SpriteGroup.add no longer accepts a sequence, use SpriteGroup.extend
     """
-    _init_rect = pygame.Rect(0, 0, 0, 0)
+    _init_rect = pg.Rect(0, 0, 0, 0)
 
     def __init__(self, *args, **kwargs):
         self._spritelayers = dict()
         self._spritelist = list()
-        pygame.sprite.AbstractGroup.__init__(self)
+        pg.sprite.AbstractGroup.__init__(self)
         self._default_layer = kwargs.get('default_layer', 0)
 
     def __nonzero__(self):
@@ -232,20 +235,10 @@ class SpriteGroup(pygame.sprite.LayeredUpdates):
         used to add the sprites.
         """
         layer = kwargs.get('layer')
-        if isinstance(sprite, pygame.sprite.Sprite):
+        if isinstance(sprite, pg.sprite.Sprite):
             if not self.has_internal(sprite):
                 self.add_internal(sprite, layer)
                 sprite.add_internal(self)
         else:
-            raise TypeError
-
-    def calc_bounding_rect(self):
-        """A rect object that contains all sprites of this group
-        """
-        sprites = self.sprites()
-        if not sprites:
-            return self.rect
-        elif len(sprites) == 1:
-            return pygame.Rect(sprites[0].rect)
-        else:
-            return sprites[0].rect.unionall([s.rect for s in sprites[1:]])
+            pass
+            # raise TypeError

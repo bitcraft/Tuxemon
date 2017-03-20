@@ -21,76 +21,168 @@
 #
 # Contributor(s):
 #
-# William Edwards <shadowapex@gmail.com>
 # Leif Theden <leif.theden@gmail.com>
 #
 #
-from __future__ import division
+import math
 
-import pygame
+import pygame as pg
 
-from core.components.sprite import Sprite
-from core.components.ui import draw
-
-min_font_size = 7
+from core import tools
 
 
-class TextArea(Sprite):
-    """ Area of the screen that can draw text
+def bubble_text(font, fg, bg, text):
+    """ Render text with a thin border
+
+    :type font: pg.font.Font
+    :param fg:
+    :param bg:
+    :param text: Text to draw
+    :rtype: pg.Surface
     """
-    animated = True
+    top = font.render(text, 1, fg)
+    back = font.render(text, 1, bg)
 
-    def __init__(self, font, font_color, bg=(192, 192, 192)):
-        super(TextArea, self).__init__()
-        self.rect = pygame.Rect(0, 0, 0, 0)
-        self.drawing_text = False
-        self.font = font
-        self.font_color = font_color
-        self.font_bg = bg
-        self._rendered_text = None
-        self._text_rect = None
-        self._image = None
-        self._text = None
+    # equals about 1 'pixel'
+    offset = tools.scale_sequence((1, 1))
+    size = [int(math.ceil(a + b)) for a, b in zip(offset, top.get_size())]
+    image = pg.Surface(size, pg.SRCALPHA)
 
-    def __iter__(self):
-        return self
+    # simulate a border by blitting the bg around in a circle
+    for x in range(int(offset[0] * 2)):
+        for y in range(int(offset[1] * 2)):
+            image.blit(back, (x, y))
 
-    def __len__(self):
-        return len(self._text)
+    image.blit(top, offset)
+    return image
 
-    @property
-    def text(self):
-        return self._text
 
-    @text.setter
-    def text(self, value):
-        if value != self._text:
-            self._text = value
+def shadow_text(font, fg, bg, text):
+    """ Render text with a shadow
 
-        if self.animated:
-            self._start_text_animation()
-        else:
-            self.image = draw.shadow_text(self.font, self.font_color, self.font_bg, self._text)
+    :type font: pg.font.Font
+    :param fg:
+    :param bg:
+    :param text: Text to draw
+    :rtype: pg.Surface
+    """
+    top = font.render(text, 1, fg)
+    shadow = font.render(text, 1, bg)
 
-    def __next__(self):
-        if self.animated:
-            try:
-                dirty, dest, scrap = next(self._iter)
-                self._image.fill((0, 0, 0, 0), dirty)
-                self._image.blit(scrap, dest)
-            except StopIteration:
-                self.drawing_text = False
-                raise
-        else:
-            raise StopIteration
+    # equals about 1 'pixel'
+    offset = tools.scale_sequence((0.5, 0.5))
+    size = [int(math.ceil(a + b)) for a, b in zip(offset, top.get_size())]
+    image = pg.Surface(size, pg.SRCALPHA)
 
-    next = __next__
+    image.blit(shadow, offset)
+    image.blit(top, (0, 0))
+    return image
 
-    def _start_text_animation(self):
-        self.drawing_text = True
-        self.image = pygame.Surface(self.rect.size, pygame.SRCALPHA)
-        self._iter = draw.iter_render_text(self._text, self.font, self.font_color,
-                                           self.font_bg, self.image.get_rect())
+
+def iter_render_text(text, font, fg, bg, rect):
+    """ Return generator of text, rendered a character at a time, constrained by rect
+
+    :type font: pg.font.Font
+    :param text:
+    :param fg:
+    :param bg:
+    :param rect:
+    """
+    line_height = guess_font_height(font)
+    dirty = rect
+    for line_index, line in enumerate(constrain_width(text, font, rect.width)):
+        top = rect.top + line_index * line_height
+        for scrap in build_line(line):
+            surface = shadow_text(font, fg, bg, scrap)
+            update_rect = surface.get_rect(top=top, left=rect.left)
+            yield dirty, update_rect, surface
+            dirty = update_rect
+        dirty = (0, 0, 0, 0)
+
+
+def guess_font_height(font):
+    """ Estimate the height of a line of the font
+
+    :type font: pg.font.Font
+    :return:
+    """
+    return guess_rendered_text_size("Tg", font)[1]
+
+
+def guess_rendered_text_size(text, font):
+    """ Estimate the size of rendered text
+
+    Faster than rendering
+    If only height is needed, use guess_font_height
+
+    :param text:
+    :type font: pg.font.Font
+    :return:
+    """
+    return font.size(text)
+
+
+def build_line(text):
+    """ Return generator that yields a line of text one character at a time
+
+    :param text:
+    """
+    for index in range(1, len(text) + 1):
+        yield text[:index]
+
+
+def constrain_width(text, font, width):
+    """ Generator that yields lines of text, constrained by width
+
+    :param text:
+    :type font: pg.font.Font
+    :param width:
+    """
+    for line in iterate_word_lines(text):
+        scrap = None
+        for word in line:
+            if scrap:
+                test = scrap + " " + word
+            else:
+                test = word
+            token_width = font.size(test)[0]
+            if token_width >= width:
+                if scrap is None:
+                    print('message is too large for width', text)
+                    raise RuntimeError
+                yield scrap
+                scrap = word
+            else:
+                scrap = test
+        else:  # executed when line is too large
+            yield scrap
+
+
+def iterate_words(text):
+    """ Generator that yields words of a line of text
+
+    :param text:
+    """
+    for word in text.split(" "):
+        yield word
+
+
+def iterate_lines(text):
+    """ Generator that yields text split by newlines
+
+    :param text:
+    """
+    for line in text.strip().split("\n"):
+        yield line
+
+
+def iterate_word_lines(text):
+    """ Generator that yields at word and line boundries
+
+    :param text:
+    """
+    for line in iterate_lines(text):
+        yield iterate_words(line)
 
 
 def draw_text(surface, text=None, rect=None, justify="left", align=None,

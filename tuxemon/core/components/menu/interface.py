@@ -1,7 +1,8 @@
 import pygame
 
 from core import tools
-from core.components.ui.draw import GraphicBox
+from core.components.ui.graphicbox import GraphicBox
+from core.components.ui.widget import Widget
 
 
 class HorizontalBar(object):
@@ -79,7 +80,8 @@ class HpBar(HorizontalBar):
         inner.width -= tools.scale(11)
         return inner
 
-class MenuItem(pygame.sprite.Sprite):
+
+class MenuItem(Widget):
     def __init__(self, image, label, description, game_object):
         super(MenuItem, self).__init__()
         self.image = image
@@ -91,6 +93,14 @@ class MenuItem(pygame.sprite.Sprite):
 
         self.enabled = True
         self._in_focus = False
+
+    def _draw(self, surface):
+        """
+
+        :param surface:
+        :return:
+        """
+        surface.blit(self.image, self.rect)
 
     def toggle_focus(self):
         self._in_focus = not self._in_focus
@@ -104,7 +114,7 @@ class MenuItem(pygame.sprite.Sprite):
         self._in_focus = bool(value)
 
 
-class MenuCursor(pygame.sprite.Sprite):
+class MenuCursor(Widget):
     def __init__(self, image):
         super(MenuCursor, self).__init__()
         self.image = image

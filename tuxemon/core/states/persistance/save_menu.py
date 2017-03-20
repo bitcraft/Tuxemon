@@ -8,9 +8,8 @@ import pygame
 from core import prepare
 from core.tools import open_dialog
 from core.components import save
-from core.components.menu import PopUpMenu
+from core.components.ui.popup import PopUpMenu
 from core.components.menu.interface import MenuItem
-from core.components.ui import text
 from core.components.locale import translator
 trans = translator.translate
 

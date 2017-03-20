@@ -110,7 +110,7 @@ def main():
             monster.apply_status(Technique("status_poison"))
 
         # control.push_state("MonsterMenuState")
-        control.push_state("MonsterInfoState")
+        # control.push_state("MonsterInfoState")
 
     control.main()
     pygame.quit()

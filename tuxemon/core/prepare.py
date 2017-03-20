@@ -27,9 +27,10 @@
 #
 # core.prepare Prepares the game environment.
 #
-"""This module initializes the display and creates dictionaries of resources.
+""" This module initializes the display and creates dictionaries of resources.
 It contains all the static and dynamic variables used throughout the game such
 as display resolution, scale, etc.
+It is in a way, a kind of configuration module.
 """
 
 import os
@@ -74,6 +75,14 @@ if not os.path.isdir(USER_DATA_PATH):
 # Read the "tuxemon.cfg" configuration file
 CONFIG = config.Config(CONFIG_FILE_PATH)
 HEADLESSCONFIG = config.HeadlessConfig(CONFIG_FILE_PATH)
+
+# Font related stuff.  Here for now, eventually move to somewhere else
+DEFAULT_FONT_FILENAME = "PressStart2P.ttf"
+DEFAULT_FONT_SIZE = 5
+MIN_FONT_SIZE = 4
+
+# Theme default window borders
+DEFAULT_BORDERS = "gfx/dialog-borders01.png"
 
 # Set up the screen size and caption
 SCREEN_SIZE = CONFIG.resolution

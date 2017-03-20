@@ -30,10 +30,10 @@ import math
 
 import pygame
 
-from core.components.sprite import SpriteGroup
+from core.components.ui.widget import Widget
 
 
-class Layout(SpriteGroup):
+class Layout(Widget):
     """
     Layouts contain widgets and position them.
     """
@@ -46,6 +46,8 @@ class MenuLayout(Layout):
 
     Includes functions for moving a cursor around the screen
     """
+    orientation = 'horizontal'
+    columns = 1
 
     def determine_cursor_movement(self, *args):
         """ Given an event, determine a new selected item offset
@@ -155,7 +157,7 @@ class MenuLayout(Layout):
                 if index == original_index:
                     raise RuntimeError
 
-                seeking_index = not self._spritelist[index].enabled
+                seeking_index = not self.children[index].enabled
 
         return index
 
@@ -165,17 +167,20 @@ class RelativeLayout(Layout):
     Drawing operations are relative to the group's rect
     """
     rect = pygame.Rect(0, 0, 0, 0)
+    _init_rect = pygame.Rect(0, 0, 0, 0)
 
     def __init__(self, **kwargs):
-        self.parent = kwargs.get('parent')
-        super(RelativeLayout, self).__init__(**kwargs)
+        super(RelativeLayout, self).__init__()
+        self._default_layer = kwargs.get('default_layer', 0)
 
-    def calc_bounding_rect(self):
-        """A rect object that contains all sprites of this group
-        """
-        rect = super(RelativeLayout, self).calc_bounding_rect()
-        # return self.calc_absolute_rect(rect)
-        return rect
+        self._spritelayers = {}
+        self._spritelist = []
+        self.spritedict = {}
+        self.lostsprites = []
+
+    def add_widget(self, widget, index=0):
+        super(RelativeLayout, self).add_widget(widget)
+        self.spritedict[widget] = self._init_rect
 
     def calc_absolute_rect(self, rect):
         self.update_rect_from_parent()
@@ -197,7 +202,7 @@ class RelativeLayout(Layout):
         self.lostsprites = []
         dirty_append = dirty.append
 
-        for s in self.sprites():
+        for s in self.children:
             if s.image is None:
                 continue
 
@@ -247,13 +252,15 @@ class GridLayout(RelativeLayout, MenuLayout):
             self._needs_arrange = False
         return super(GridLayout, self).calc_bounding_rect()
 
-    def add(self, item, **kwargs):
-        """Add something to the stacker
+    def add_widget(self, item, **kwargs):
+        """ Add something to the grid
+
         do not add iterables to this function.  use 'extend'
+
         :param item: stuff to add
         :returns: None
         """
-        super(GridLayout, self).add(item, **kwargs)
+        super(GridLayout, self).add_widget(item, **kwargs)
         self._needs_arrange = True
 
     def remove(self, *items):
@@ -277,7 +284,7 @@ class GridLayout(RelativeLayout, MenuLayout):
 
         # max_width = 0
         max_height = 0
-        for item in self.sprites():
+        for item in self.children:
             # max_width = max(max_width, item.rect.width)
             max_height = max(max_height, item.rect.height)
 
@@ -298,6 +305,6 @@ class GridLayout(RelativeLayout, MenuLayout):
 
         # TODO: pagination API
 
-        for index, item in enumerate(self.sprites()):
+        for index, item in enumerate(self.children):
             oy, ox = divmod(index, self.columns)
             item.rect.topleft = ox * column_spacing, oy * line_spacing
