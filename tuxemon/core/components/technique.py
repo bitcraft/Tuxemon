@@ -189,9 +189,6 @@ class Technique(object):
             'name': self.name,
             'success': False,
             'should_tackle': False,
-            'message_template': 'combat_used_x',
-            'success_message': 'item_success',
-            'failure_message': 'item_failure',
         }
 
         # TODO: handle conflicting values from multiple technique actions
@@ -320,26 +317,32 @@ class Technique(object):
         # TODO: relies on setting "combat_state" attribute.  maybe clear it up later
         # TODO: these values are set in combat_menus.py
 
+        def swap_add():
+            # rearrange the trainer's monster list
+            monster_list = user.monsters
+            original_index = monster_list.index(original_monster)
+            target_index = monster_list.index(target)
+            monster_list[original_index] = target
+            monster_list[target_index] = original_monster
+
+            # TODO: make accommodations for battlefield positions
+            # add the monster into play
+            combat_state.add_monster_into_play(user, target)
+
         # TODO: find a way to pass values. this will only work for SP games with one monster party
         # get the original monster to be swapped out
         original_monster = user.monsters[0]
+        combat_state = self.combat_state
 
         # rewrite actions to target the new monster.  must be done before original is removed
-        self.combat_state.rewrite_action_queue_target(original_monster, target)
+        combat_state.rewrite_action_queue_target(original_monster, target)
 
         # remove the old monster and all their actions
-        self.combat_state.remove_monster_from_play(user, original_monster)
+        combat_state.remove_monster_from_play(user, original_monster)
 
-        # rearrange the trainer's monster list
-        monster_list = user.monsters
-        original_index = monster_list.index(original_monster)
-        target_index = monster_list.index(target)
-        monster_list[original_index] = target
-        monster_list[target_index] = original_monster
-
-        # TODO: make accommodations for battlefield positions
-        # add the monster into play
-        self.combat_state.add_monster_into_play(user, target)
+        # give a slight delay
+        combat_state.task(swap_add, .75)
+        combat_state.suppress_phase_change(.75)
 
         return {
             'success': True,

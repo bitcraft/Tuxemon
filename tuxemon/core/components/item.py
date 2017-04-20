@@ -158,9 +158,6 @@ class Item(object):
         # defaults for the return. items can override these values in their return.
         meta_result = {
             'name': self.name,
-            'message_template': 'combat_used_x',
-            'success_message': 'item_success',
-            'failure_message': 'item_failure',
             'num_shakes': 0,
             'should_tackle': False,
             'success': False

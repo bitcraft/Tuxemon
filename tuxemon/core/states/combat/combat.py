@@ -375,7 +375,6 @@ class CombatState(CombatAnimations):
         self._action_queue.sort(key=rank_action)
         print([(i.technique.slug, i.user.speed) for i in self._action_queue])
 
-
     def update_phase(self):
         """ Execute/update phase actions
 
