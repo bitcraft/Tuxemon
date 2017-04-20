@@ -276,9 +276,6 @@ class Technique(object):
     def swap(self, user, target):
         """ Used just for combat: change order of monsters
 
-        Not really a 'swap".  pops the target and places them at
-        front of the monsters list
-
         Position of monster in party will be changed
 
         :param user: core.components.monster.Monster
@@ -287,13 +284,28 @@ class Technique(object):
         """
         # TODO: implement actions as events, so that combat state can find them
         # TODO: relies on setting "combat_state" attribute.  maybe clear it up later
-        # these values are set in combat_menus.py
-        current_monster = user.monsters[0]
-        self.combat_state.remove_monster_from_play(user, current_monster)
-        user.monsters.remove(target)
-        user.monsters.insert(0, target)
+        # TODO: these values are set in combat_menus.py
+
+        # TODO: find a way to pass values. this will only work for SP games with one monster party
+        # get the original monster to be swapped out
+        original_monster = user.monsters[0]
+
+        # rewrite actions to target the new monster.  must be done before original is removed
+        self.combat_state.rewrite_action_queue_target(original_monster, target)
+
+        # remove the old monster and all their actions
+        self.combat_state.remove_monster_from_play(user, original_monster)
+
+        # rearrange the trainer's monster list
+        monster_list = user.monsters
+        original_index = monster_list.index[original_monster]
+        target_index = monster_list.index[target]
+        monster_list[original_index] = target
+        monster_list[target_index] = original_monster
+
+        # TODO: make accommodations for battlefield positions
+        # add the monster into play
         self.combat_state.add_monster_into_play(user, target)
-        self.combat_state.rewrite_action_queue_target(current_monster, target)
 
         return {
             'name': 'Swap',
