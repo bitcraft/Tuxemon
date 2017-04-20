@@ -120,14 +120,14 @@ class CombatState(CombatAnimations):
         self.phase = None
         self.monsters_in_play = defaultdict(list)
         self._damage_map = defaultdict(set)  # track damage so experience can be awarded later
-        self._technique_cache = dict()       # cache for technique animations
-        self._decision_queue = list()        # queue for monsters that need decisions
-        self._position_queue = list()        # queue for asking players to add a monster into play (subject to change)
-        self._action_queue = list()          # queue for techniques, items, and status effects
-        self._status_icons = list()          # list of sprites that are status icons
-        self._monster_sprite_map = dict()    # monster => sprite
-        self._hp_bars = dict()               # monster => hp bar
-        self._layout = dict()                # player => home areas on screen
+        self._technique_cache = dict()  # cache for technique animations
+        self._decision_queue = list()  # queue for monsters that need decisions
+        self._position_queue = list()  # queue for asking players to add a monster into play (subject to change)
+        self._action_queue = list()  # queue for techniques, items, and status effects
+        self._status_icons = list()  # list of sprites that are status icons
+        self._monster_sprite_map = dict()  # monster => sprite
+        self._hp_bars = dict()  # monster => hp bar
+        self._layout = dict()  # player => home areas on screen
         self._animation_in_progress = False  # if true, delay phase change
         self._round = 0
 
@@ -276,18 +276,18 @@ class CombatState(CombatAnimations):
                         self._action_queue.append(action)
 
         elif phase == "action phase":
-            self._action_queue.sort(key=attrgetter("user.speed"))
+            self.sort_action_queue()
             # TODO: Running happens somewhere else, it should be moved here i think.
             # TODO: Sort other items not just healing, Swap/Run?
 
-            #Create a new list for items, possibly running/swap
-            #sort items by speed of monster applied to
-            #remove items from action_queue and insert them into their new location
+            # Create a new list for items, possibly running/swap
+            # sort items by speed of monster applied to
+            # remove items from action_queue and insert them into their new location
             precedent = []
             for action in self._action_queue:
                 if action.technique.effect == 'heal':
                     precedent.append(action)
-            #sort items by fastest target
+            # sort items by fastest target
             precedent.sort(key=attrgetter("target.speed"))
             for action in precedent:
                 self._action_queue.remove(action)
@@ -347,6 +347,34 @@ class CombatState(CombatAnimations):
         opponents = self.monsters_in_play[self.players[0]]
         technique, target = monster.ai.make_decision(monster, opponents)
         return EnqueuedAction(monster, technique, target)
+
+    def sort_action_queue(self):
+        """ Sort actions in the queue according to game rules
+        
+        * Swap actions are always first
+        * Techniques that damage are sorted by monster speed
+        * Items are sorted by trainer speed
+        
+        :return: 
+        """
+
+        def rank_action(action):
+            if action.technique.sort == "meta":
+                return 10000
+
+            if action.technique.sort == "damage":
+                return action.user.speed
+
+            if action.technique.sort == "special":
+                return action.user.speed
+
+            print('cannot sort action', action)
+            raise RuntimeError
+
+        # Eventually make an action queue class?
+        self._action_queue.sort(key=rank_action)
+        print([(i.technique.slug, i.user.speed) for i in self._action_queue])
+
 
     def update_phase(self):
         """ Execute/update phase actions
@@ -594,6 +622,14 @@ class CombatState(CombatAnimations):
         action_time = 3.0
         result = technique.use(user, target)
 
+        if technique.execute_trans:
+            context = {"user": getattr(user, "name", ''),
+                       "name": technique.name,
+                       "target": target.name}
+            message = trans(technique.execute_trans, context)
+        else:
+            message = ''
+
         try:
             tools.load_sound(technique.sfx).play()
         except AttributeError:
@@ -607,7 +643,6 @@ class CombatState(CombatAnimations):
         # is synchronized with the damage shake motion
         hit_delay = 0
         if user:
-            message = trans('combat_used_x', {"user": user.name, "name": technique.name})
 
             # TODO: a real check or some params to test if should tackle, etc
             if result["should_tackle"]:
@@ -619,27 +654,32 @@ class CombatState(CombatAnimations):
                     self.task(partial(self.animate_sprite_take_damage, target_sprite), hit_delay + .2)
                     self.task(partial(self.blink, target_sprite), hit_delay + .6)
 
+                # TODO: track total damage
                 # Track damage
                 self._damage_map[target].add(user)
 
             else:  # assume this was an item used
+
                 # handle the capture device
                 if result["name"] == "capture":
                     message += "\n" + trans('attempting_capture')
                     action_time = result["num_shakes"] + 1.8
                     self.animate_capture_monster(result["success"], result["num_shakes"], target)
-                    if result["success"]: # end combat right here
-                        self.task(self.end_combat, action_time + 0.5) # Display 'Gotcha!' first.
+
+                    # TODO: Don't end combat right away; only works with SP, and 1 member parties
+                    # end combat right here
+                    if result["success"]:
+                        self.task(self.end_combat, action_time + 0.5)  # Display 'Gotcha!' first.
                         self.task(partial(self.alert, trans('gotcha')), action_time)
                         self._animation_in_progress = True
                         return
 
                 # generic handling of anything else
                 else:
-                    if result["success"]:
-                        message += "\n" + trans('item_success')
-                    else:
-                        message += "\n" + trans('item_failure')
+                    msg_type = 'success_trans' if result['success'] else 'failure_trans'
+                    template = getattr(technique, msg_type)
+                    if template:
+                        message += "\n" + trans(template)
 
             self.alert(message)
             self.suppress_phase_change(action_time)
