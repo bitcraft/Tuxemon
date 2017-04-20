@@ -272,9 +272,8 @@ class CombatState(CombatAnimations):
 
                 for trainer in self.ai_players:
                     for monster in self.monsters_in_play[trainer]:
-                        opponents = self.monsters_in_play[self.players[0]]
-                        action, target = monster.ai.make_decision(monster, opponents)
-                        self.enqueue_action(monster, action, target)
+                        action = self.get_combat_decision_from_ai(monster)
+                        self._action_queue.append(action)
 
         elif phase == "action phase":
             self._action_queue.sort(key=attrgetter("user.speed"))
@@ -336,6 +335,18 @@ class CombatState(CombatAnimations):
 
         elif phase == "end combat":
             self.end_combat()
+
+    def get_combat_decision_from_ai(self, monster):
+        """ Get ai action from a monster and enqueue it
+        
+        :param monster: 
+        :param opponents: 
+        :return: 
+        """
+        # TODO: parties/teams/etc to choose opponents
+        opponents = self.monsters_in_play[self.players[0]]
+        technique, target = monster.ai.make_decision(monster, opponents)
+        return EnqueuedAction(monster, technique, target)
 
     def update_phase(self):
         """ Execute/update phase actions
@@ -511,6 +522,32 @@ class CombatState(CombatAnimations):
         """
         self._action_queue.append(EnqueuedAction(user, technique, target))
 
+    def rewrite_action_queue_target(self, original, new):
+        """ Used for swapping monsters
+        
+        :param original: 
+        :param new: 
+        :return: 
+        """
+        # rewrite actions in the queue to target the new monster
+        for index, action in enumerate(self._action_queue):
+            if action.target is original:
+                new_action = EnqueuedAction(action.user, action.technique, new)
+                self._action_queue[index] = new_action
+
+    def remove_monster_from_play(self, trainer, monster):
+        """ Remove monster from play without fainting it
+        
+        * If another monster has targeted this monster, it can change action
+        * Will remove actions as well
+        * currently for 'swap' technique
+        
+        :param monster: 
+        :return: 
+        """
+        self.remove_monster_actions_from_queue(monster)
+        self.animate_monster_faint(monster)
+
     def remove_monster_actions_from_queue(self, monster):
         """ Remove all queued actions for a particular monster
 
@@ -525,7 +562,7 @@ class CombatState(CombatAnimations):
                 to_remove.add(action)
         [self._action_queue.remove(action) for action in to_remove]
 
-    def suppress_phase_change(self, delay=3):
+    def suppress_phase_change(self, delay=3.0):
         """ Prevent the combat phase from changing for a limited time
 
         Use this function to prevent the phase from changing.  When
@@ -537,9 +574,10 @@ class CombatState(CombatAnimations):
         """
         if self._animation_in_progress:
             logger.debug("double suppress: bug?")
-        else:
-            self._animation_in_progress = True
-            self.task(partial(setattr, self, "_animation_in_progress", False), delay)
+            return
+
+        self._animation_in_progress = True
+        return self.task(partial(setattr, self, "_animation_in_progress", False), delay)
 
     def perform_action(self, user, technique, target=None):
         """ Do something with the thing: animated

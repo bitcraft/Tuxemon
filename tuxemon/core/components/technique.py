@@ -32,17 +32,18 @@ import os
 import random
 from collections import namedtuple
 
-from core import prepare, tools
+from core import prepare
 from core.components import db
 from core.components.locale import translator
-trans = translator.translate
 
+trans = translator.translate
 
 # Load the technique database
 techniques = db.JSONDatabase()
 techniques.load("technique")
 
 tech_ret_value = namedtuple("use", "name success properties")
+
 
 class Technique(object):
     """A technique object is a particular skill that tuxemon monsters can use
@@ -114,12 +115,13 @@ class Technique(object):
 
         # Load the animation sprites that will be used for this technique
         self.animation = results["animation"]
-        self.images = []
-        animation_dir = prepare.BASEDIR + "resources/animations/technique/"
-        directory = sorted(os.listdir(animation_dir))
-        for image in directory:
-            if self.animation and image.startswith(self.animation):
-                self.images.append("animations/technique/" + image)
+        if self.animation:
+            self.images = []
+            animation_dir = prepare.BASEDIR + "resources/animations/technique/"
+            directory = sorted(os.listdir(animation_dir))
+            for image in directory:
+                if self.animation and image.startswith(self.animation):
+                    self.images.append("animations/technique/" + image)
 
         # Load the sound effect for this technique
         sfx_directory = "sounds/technique/"
@@ -170,6 +172,7 @@ class Technique(object):
         """
         # Loop through all the effects of this technique and execute the effect's function.
         # TODO: more robust API
+        # TODO: separate classes for each Technique
 
         # 'result' can either be a tuple or a boolean.
         result = None
@@ -180,6 +183,9 @@ class Technique(object):
 
         if type(result) is bool:
             return {"name": last_effect_name, "success": result, "should_tackle": result}
+
+        elif type(result) is dict:
+            return result
 
         result[1]["success"] = result[0]
         result = result[1]
@@ -270,14 +276,27 @@ class Technique(object):
     def swap(self, user, target):
         """ Used just for combat: change order of monsters
 
+        Not really a 'swap".  pops the target and places them at
+        front of the monsters list
+
         Position of monster in party will be changed
 
         :param user: core.components.monster.Monster
         :param target: core.components.monster.Monster
         :returns: None
         """
-        # TODO: relies on setting "other" attribute.  maybe clear it up later
-        index = user.monsters.index(self.other)
-        user.monsters[index] = target
-        user.monsters[0] = self.other
-        return True
+        # TODO: implement actions as events, so that combat state can find them
+        # TODO: relies on setting "combat_state" attribute.  maybe clear it up later
+        # these values are set in combat_menus.py
+        current_monster = user.monsters[0]
+        self.combat_state.remove_monster_from_play(user, current_monster)
+        user.monsters.remove(target)
+        user.monsters.insert(0, target)
+        self.combat_state.add_monster_into_play(user, target)
+        self.combat_state.rewrite_action_queue_target(current_monster, target)
+
+        return {
+            'name': 'Swap',
+            'success': True,
+            'should_tackle': False
+        }
