@@ -253,7 +253,7 @@ class Item(object):
         print("65536 / (255 / {}) ** 0.1875".format(catch_check))
 
         msg = "Each shake has a {} chance of breaking the creature free. (shake_check = {})"
-        print(msg.format(round((65536 - shake_check) / 65536, 2)), round(shake_check))
+        print(msg.format(round((65536 - shake_check) / 65536, 2), round(shake_check)))
 
         # 4 shakes to give monster change to escape
         for i in range(0, 4):
@@ -262,6 +262,7 @@ class Item(object):
             if random_num > round(shake_check):
 
                 return {"success": False,
+                        "capture": True,
                         "num_shakes": i + 1}
 
         # add creature to the player's monster list
@@ -269,4 +270,5 @@ class Item(object):
 
         # TODO: remove monster from the other party
         return {"success": True,
+                "capture": True,
                 "num_shakes": 4}

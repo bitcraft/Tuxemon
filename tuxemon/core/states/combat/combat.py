@@ -35,7 +35,6 @@ import logging
 from collections import defaultdict, namedtuple
 from functools import partial
 from itertools import chain
-from operator import attrgetter
 
 import pygame
 
@@ -277,21 +276,6 @@ class CombatState(CombatAnimations):
 
         elif phase == "action phase":
             self.sort_action_queue()
-            # TODO: Running happens somewhere else, it should be moved here i think.
-            # TODO: Sort other items not just healing, Swap/Run?
-
-            # Create a new list for items, possibly running/swap
-            # sort items by speed of monster applied to
-            # remove items from action_queue and insert them into their new location
-            precedent = []
-            for action in self._action_queue:
-                if action.technique.effect == 'heal':
-                    precedent.append(action)
-            # sort items by fastest target
-            precedent.sort(key=attrgetter("target.speed"))
-            for action in precedent:
-                self._action_queue.remove(action)
-                self._action_queue.insert(0, action)
 
         elif phase == "post action phase":
             # apply status effects to the monsters
@@ -359,21 +343,30 @@ class CombatState(CombatAnimations):
         """
 
         def rank_action(action):
-            if action.technique.sort == "meta":
-                return 10000
+            sort = action.technique.sort
+            primary_order = sort_order.index(sort)
 
-            if action.technique.sort == "damage":
-                return action.user.speed
+            if sort == 'meta':
+                # all meta items sorted together
+                # use of 0 leads to undefined sort/probably random
+                return primary_order, 0
 
-            if action.technique.sort == "special":
-                return action.user.speed
+            if sort == 'item':
+                # should be trainer speed in this case
+                return primary_order, action.user.speed
+
+            if sort == 'damage':
+                # should be monster speed in this case
+                return primary_order, action.user.speed
 
             print('cannot sort action', action)
             raise RuntimeError
 
-        # Eventually make an action queue class?
-        self._action_queue.sort(key=rank_action)
-        print([(i.technique.slug, i.user.speed) for i in self._action_queue])
+        sort_order = ['meta', 'item', 'heal', 'damage']
+
+        # TODO: Running happens somewhere else, it should be moved here i think.
+        # TODO: Eventually make an action queue class?
+        self._action_queue.sort(key=rank_action, reverse=True)
 
     def update_phase(self):
         """ Execute/update phase actions
@@ -660,7 +653,7 @@ class CombatState(CombatAnimations):
             else:  # assume this was an item used
 
                 # handle the capture device
-                if result["name"] == "capture":
+                if result["capture"]:
                     message += "\n" + trans('attempting_capture')
                     action_time = result["num_shakes"] + 1.8
                     self.animate_capture_monster(result["success"], result["num_shakes"], target)
