@@ -28,6 +28,7 @@ from __future__ import absolute_import
 
 from core.tools import open_dialog
 
+
 class DialogContext(object):
     def __init__(self):
         # this is a potentially temporary solution to a problem with dialog chains

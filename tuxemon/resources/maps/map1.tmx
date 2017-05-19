@@ -222,11 +222,11 @@
   </object>
   <object id="70" name="Random Battle 1" type="event" x="512" y="432" width="128" height="80">
    <properties>
-    <property name="act1" value="random_encounter default_encounter"/>
-    <property name="act2" value="play_map_animation grass,0.1,noloop,player"/>
+    <property name="act1" value="dialog just a test"/>
+    <property name="act2" value="wait_for_dialog"/>
+    <property name="act3" value="start_battle npc_maple"/>
     <property name="cond1" value="is player_moved"/>
     <property name="cond2" value="is player_at"/>
-    <property name="cond3" value="is party_size greater_than,0"/>
    </properties>
   </object>
   <object id="71" name="Random Battle 2" type="event" x="352" y="432" width="96" height="80">

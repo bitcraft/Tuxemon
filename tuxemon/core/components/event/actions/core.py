@@ -27,11 +27,10 @@
 from __future__ import absolute_import
 
 import logging
-from core.components.event.contexts.dialogcontext import DialogContext
-from core.tools import open_dialog
-from core.components.locale import translator
 from functools import partial
 
+from core.components.event.contexts.dialogcontext import DialogContext
+from core.components.locale import translator
 
 # Create a logger for optional handling of debug messages.
 logger = logging.getLogger(__name__)
@@ -69,7 +68,6 @@ class Core(object):
             text = text.replace("${{monster_" + str(i) + "_level}}", str(monster.level))
 
         return text
-
 
     def set_variable(self, game, action, contexts):
         """Sets the key in the player.game_variables dictionary.
@@ -109,7 +107,6 @@ class Core(object):
         # Append the game_variables dictionary with the key: value pair
         player.game_variables[var_key] = var_value
 
-
     def quit(self, game, action, contexts):
         """Completely quit the game
 
@@ -136,7 +133,6 @@ class Core(object):
         game._wants_to_exit = True
         game.exit = True
         game.done = True
-
 
     def dialog(self, game, action, contexts):
         """Opens a dialog window with text
@@ -171,7 +167,6 @@ class Core(object):
 
         self.dialog_chain(game, action, contexts)
 
-
     def translated_dialog(self, game, action, contexts):
         """Opens a dialog window with translated text according to the passed translation key. Parameters
         passed to the translation string will also be checked if a translation key exists.
@@ -205,7 +200,6 @@ class Core(object):
 
         """
         self.translated_dialog_chain(game, action, contexts)
-
 
     def dialog_chain(self, game, action, contexts):
         """Opens a chain of dialogs in order. Dialog chain must be ended with the ${{end}} keyword.
@@ -249,7 +243,6 @@ class Core(object):
                 dialog_context = DialogContext()
                 contexts["dialog"] = dialog_context
             dialog_context.add_dialog(text)
-
 
     def translated_dialog_chain(self, game, action, contexts):
         """Opens a chain of dialogs in order. Dialog chain must be ended with the ${{end}} keyword.
@@ -310,7 +303,6 @@ class Core(object):
         logger.info("Opening translated chain dialog window")
         dialog_context.add_dialog(text)
 
-
     def rumble(self, game, action, contexts):
         """Rumbles available controllers with rumble support
 
@@ -356,7 +348,6 @@ class Core(object):
         magnitude = int((power * 0.01) * max_power)
         game.rumble.rumble(-1, length=duration, magnitude=magnitude)
 
-
     def wait_for_secs(self, game, action, contexts):
         """Pauses the event engine for n number of seconds.
 
@@ -388,7 +379,6 @@ class Core(object):
         secs = float(action.parameters[0])
         game.event_engine.state = "waiting"
         game.event_engine.wait = secs
-
 
     def wait_for_input(self, game, action, contexts):
         """Pauses the event engine until specified button is pressed
@@ -423,6 +413,33 @@ class Core(object):
         game.event_engine.wait = 2
         game.event_engine.button = button
 
+    def wait_for_dialog(self, game, action, contexts):
+        """Pauses the event engine until the current dialog is closed
+
+        :param game: The main game object that contains all the game's variables.
+        :param action: The action (tuple) retrieved from the database that contains the action's
+            parameters
+
+        :type game: core.control.Control
+        :type action: Tuple
+
+        :rtype: None
+        :returns: None
+
+        Valid Parameters: None
+
+        **Examples:**
+
+        >>> action.__dict__
+        {
+            "type": "wait_for_dialog",
+            "parameters": [
+            ]
+        }
+
+        """
+        game.event_engine.state = "waiting for input"
+
     def change_state(self, game, action, contexts):
         """Changes to the specified state.
 
@@ -454,7 +471,6 @@ class Core(object):
         # Don't override previous state if we are still in the state.
         if game.state_name != action.parameters[0]:
             game.push_state(action.parameters[0])
-
 
     def call_event(self, game, action, contexts):
         """Executes the specified event's actions by id.
@@ -506,6 +522,7 @@ class Core(object):
 
         Valid Parameters: choice1:choice2,var_key
         """
+
         def set_variable(game, player, var_key, var_value):
             player.game_variables[var_key] = var_value
             game.pop_state()
@@ -517,7 +534,8 @@ class Core(object):
         var_list = action.parameters[0].split(":")
         var_menu = list()
         for val in var_list:
-            var_menu.append((val, val, partial(set_variable, game=game, player=player, var_key=action.parameters[1], var_value=val)))
+            var_menu.append((val, val, partial(set_variable, game=game, player=player, var_key=action.parameters[1],
+                                               var_value=val)))
         dialog_context = contexts.get("dialog", None)
         if not dialog_context:
             dialog_context = DialogContext()
@@ -539,6 +557,7 @@ class Core(object):
 
         Valid Parameters: choice1:choice2,var_key
         """
+
         def set_variable(game, player, var_key, var_value):
             player.game_variables[var_key] = var_value
             game.pop_state()
@@ -551,7 +570,8 @@ class Core(object):
         var_menu = list()
         for val in var_list:
             label = translator.translate(val).upper()
-            var_menu.append((val, label, partial(set_variable, game=game, player=player, var_key=action.parameters[1], var_value=val)))
+            var_menu.append((val, label, partial(set_variable, game=game, player=player, var_key=action.parameters[1],
+                                                 var_value=val)))
         dialog_context = contexts.get("dialog", None)
         if not dialog_context:
             dialog_context = DialogContext()

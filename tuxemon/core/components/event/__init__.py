@@ -185,6 +185,10 @@ class EventEngine(object):
                 self.state = "running"
                 return
 
+        elif self.state == "waiting for dialog":
+            if not game.current_state.name == "DialogState":
+                self.state = "running"
+
     def process_event(self, event):
         # NOTE: getattr on pygame is a little dangerous. We should sanitize input.
         if self.button and event.type == pygame.KEYUP and event.key == getattr(pygame, self.button):
@@ -218,6 +222,7 @@ class EventEngine(object):
 
         # Loop through the list of actions and execute them
         for action in action_list:
+            print(action, contexts)
 
             # Call the method listed and return the modified event data
             try:
@@ -227,5 +232,6 @@ class EventEngine(object):
                 logger.error(error)
                 logger.error(message)
                 traceback.print_exc()
+
         for key in contexts:
             contexts[key].execute(game)
