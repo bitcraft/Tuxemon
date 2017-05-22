@@ -250,7 +250,7 @@ class CombatAnimations(Menu):
         :type monster: core.components.monster.Monster
         :return:
         """
-        return self.shadow_text("{0.name: <12}Lv.{0.level: >2}".format(monster))
+        return shadow_text(self.font, "{0.name: <12}Lv.{0.level: >2}".format(monster))
 
     def get_side(self, rect):
         """ [WIP] get 'side' of screen rect is in

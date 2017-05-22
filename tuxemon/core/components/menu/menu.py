@@ -236,7 +236,7 @@ class Menu(state.State):
         """
         self.menu_select_sound = tools.load_sound(self.menu_select_sound_filename)
 
-    def shadow_text(self, text, bg=(192, 192, 192)):
+    def shadow_text(self, text, bg=(0, 0, 0, 192)):
         """ Draw shadowed text
 
         :param text: Text to draw
@@ -244,7 +244,7 @@ class Menu(state.State):
         :returns:
         """
         top = self.font.render(text, 1, self.font_color)
-        shadow = self.font.render(text, 1, bg)
+        shadow = self.font.render(text, 1, (0, 0, 0, 192)).convert_alpha()
 
         offset = layout((0.5, 0.5))
         size = [int(math.ceil(a + b)) for a, b in zip(offset, top.get_size())]

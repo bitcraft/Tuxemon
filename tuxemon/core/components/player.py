@@ -582,7 +582,6 @@ class Player(object):
         # Return a list of all the collision tiles around the player.
         return collisions
 
-
     def add_monster(self, monster):
         """Adds a monster to the player's list of monsters. If the player's party is full, it
         will send the monster to PCState archive.
