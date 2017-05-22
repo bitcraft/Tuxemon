@@ -439,61 +439,6 @@ class Player(object):
         else:
             print("self.path=" + str(len(self.path)) + ", self.moving="+str(self.moving))
 
-    # def draw(self, screen, layer):
-    #     """Draws the player to the screen depending on whether or not they are moving or
-    #     standing still.
-    #
-    #     :param screen: The pygame screen to draw the player to.
-    #     :param layer: Which part of the sprite to draw. Can be "top" or "bottom"
-    #
-    #     :type screen: pygame.Surface
-    #     :type layer: String
-    #
-    #     :returns: None
-    #
-    #     """
-    #     # If the player is walking at a different than normal speed, offset the animation rate.
-    #     rate = self.moverate / self.walkrate
-    #
-    #     # If this is the bottom half, we need to draw it at a lower position.
-    #     if layer == "bottom":
-    #         offset = self.standing["front"].get_height() / 2
-    #     else:
-    #         offset = 0
-    #
-    #     # If the player is moving, draw its movement animation.
-    #     if self.move_direction == "up" and self.moving:
-    #         self.sprite["back_walk-" + layer].rate = rate
-    #         self.sprite["back_walk-" + layer].blit(screen, (self.position[0],
-    #                                                         self.position[1] + offset))
-    #     elif self.move_direction == "down" and self.moving:
-    #         self.sprite["front_walk-" + layer].rate = rate
-    #         self.sprite["front_walk-" + layer].blit(screen, (self.position[0],
-    #                                                          self.position[1] + offset))
-    #     elif self.move_direction == "left" and self.moving:
-    #         self.sprite["left_walk-" + layer].rate = rate
-    #         self.sprite["left_walk-" + layer].blit(screen, (self.position[0],
-    #                                                         self.position[1] + offset))
-    #     elif self.move_direction == "right" and self.moving:
-    #         self.sprite["right_walk-" + layer].rate = rate
-    #         self.sprite["right_walk-" + layer].blit(screen, (self.position[0],
-    #                                                          self.position[1] + offset))
-    #
-    #     # If the player is not moving, draw its standing animation.
-    #     if not self.moving:
-    #         if self.facing == "up":
-    #             screen.blit(self.standing["back-" + layer], (self.position[0],
-    #                                                          self.position[1] + offset))
-    #         if self.facing == "down":
-    #             screen.blit(self.standing["front-" + layer], (self.position[0],
-    #                                                           self.position[1] + offset))
-    #         if self.facing == "left":
-    #             screen.blit(self.standing["left-" + layer], (self.position[0],
-    #                                                          self.position[1] + offset))
-    #         if self.facing == "right":
-    #             screen.blit(self.standing["right-" + layer], (self.position[0],
-    #                                                           self.position[1] + offset))
-
     def get_sprites(self):
         """ Get the surfaces and layers for the sprite
 
@@ -636,6 +581,7 @@ class Player(object):
 
         # Return a list of all the collision tiles around the player.
         return collisions
+
 
     def add_monster(self, monster):
         """Adds a monster to the player's list of monsters. If the player's party is full, it

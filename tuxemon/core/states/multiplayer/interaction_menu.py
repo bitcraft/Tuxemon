@@ -1,6 +1,5 @@
 from core.components.menu import PopUpMenu
 from core.components.menu.interface import MenuItem
-from core.components.ui.text import shadow_text
 
 
 class InteractionMenu(PopUpMenu):
@@ -52,6 +51,6 @@ class ConfirmMenu(PopUpMenu):
         )
 
         for label, callback in menu_items_map:
-            image = shadow_text(self.font, label)
+            image = self.shadow_text(label)
             item = MenuItem(image, label, None, None, callback)
             self.add(item)

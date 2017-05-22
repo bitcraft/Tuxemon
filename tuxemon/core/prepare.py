@@ -27,10 +27,9 @@
 #
 # core.prepare Prepares the game environment.
 #
-""" This module initializes the display and creates dictionaries of resources.
+"""This module initializes the display and creates dictionaries of resources.
 It contains all the static and dynamic variables used throughout the game such
 as display resolution, scale, etc.
-It is in a way, a kind of configuration module.
 """
 
 import os

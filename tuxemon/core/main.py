@@ -28,7 +28,6 @@
 # core.main Sets up the states and main game loop.
 #
 from collections import namedtuple
-from functools import partial
 
 from . import prepare
 
@@ -75,6 +74,7 @@ def main():
 
     # block of code useful for testing
     #if 1:
+    #    from functools import partial
     #    from core.components.event.actions.player import Player
 
     #    print("DEBUG OPTIONS ENABLED")

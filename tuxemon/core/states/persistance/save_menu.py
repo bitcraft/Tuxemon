@@ -8,8 +8,9 @@ import pygame
 from core import prepare
 from core.tools import open_dialog
 from core.components import save
-from core.components.ui.popup import PopUpMenu
+from core.components.menu import PopUpMenu
 from core.components.menu.interface import MenuItem
+from core.components.ui import draw_text
 from core.components.locale import translator
 trans = translator.translate
 
@@ -41,7 +42,7 @@ class SaveMenuState(PopUpMenu):
     def render_empty_slot(self, rect):
         slot_image = pygame.Surface(rect.size, pygame.SRCALPHA)
         rect = rect.move(0, rect.height // 2 - 10)
-        text.draw_text(slot_image, trans('empty_slot'), rect, font=self.font)
+        draw_text(slot_image, trans('empty_slot'), rect, font=self.font)
         return slot_image
 
     def render_slot(self, rect, slot_num):
@@ -74,12 +75,12 @@ class SaveMenuState(PopUpMenu):
 
         # Draw the slot text
         rect = rect.move(0, rect.height // 2 - 10)
-        text.draw_text(slot_image, trans('slot') + " " + str(slot_num), rect, font=self.font)
+        draw_text(slot_image, trans('slot') + " " + str(slot_num), rect, font=self.font)
 
         x = int(rect.width * .5)
-        text.draw_text(slot_image, save_data['player_name'], (x, 0, 500, 500), font=self.font)
+        draw_text(slot_image, save_data['player_name'], (x, 0, 500, 500), font=self.font)
         if "error" not in save_data:
-            text.draw_text(slot_image, save_data['time'], (x, 50, 500, 500), font=self.font)
+            draw_text(slot_image, save_data['time'], (x, 50, 500, 500), font=self.font)
 
         return slot_image
 
