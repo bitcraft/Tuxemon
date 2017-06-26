@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Tuxemon
@@ -27,19 +26,16 @@
 #
 # core.main Sets up the states and main game loop.
 #
-from collections import namedtuple
-from functools import partial
+from __future__ import absolute_import
+
+import logging
 
 from . import prepare
 
+logger = logging.getLogger(__name__)
 
-def adapter(name, *args):
-    nt = namedtuple(name, "parameters")
-
-    def func(*args):
-        return nt(args)
-
-    return func
+# TODO: move to config
+debug = False
 
 
 def main():
@@ -50,6 +46,9 @@ def main():
     :returns: None
 
     """
+    import logging
+    logging.basicConfig(level=logging.DEBUG)
+
     import pygame
     from .control import PygameControl
 
@@ -74,6 +73,8 @@ def main():
         control.push_state("FadeInTransition")
 
     # block of code useful for testing
+    if debug:
+        logger.info("********* DEBUG OPTIONS ENABLED *********")
     if 0:
         import random
         from core.components.event.actions.player import Player
@@ -83,6 +84,10 @@ def main():
         # TODO: fix this player/player1 issue
         # DEBUG ONLY.
         control.player1 = prepare.player1
+        action = control.event_engine.execute_action
+
+        action("add_monster", ("txmn_bigfin", 10))
+        action("add_monster", ("txmn_dandylion", 10))
         names = {'Omnn', 'Luil', 'Tasv', 'Ykimi', 'Nood', 'Rakck', 'Eisso', 'Pheuth', 'Ouste', 'Iuntu', 'Oechi', 'Yerc', 'Iati', 'Ormth', 'Tad', 'Slit', 'Sloint', 'Uelma', 'Osst', 'Lley', 'Rer', 'Tar', 'Belr', 'Thrias', 'Idaro', 'Dom', 'Endr', 'Ildth', 'Myld', 'Einai', 'Osm', 'Zaert', 'Ekino', 'Aurna', 'Teih', 'Itono', 'Ehona', 'Adeny', 'Dyng', 'Eane', 'Odra', 'Denth', 'End', 'Torph', 'Nysn', 'Iac', 'Schient', 'Orilo', 'Lernd', 'Pollt', 'Aldck', 'Thel', 'Tech', 'Iomy', 'Neih', 'Seis', 'Zis', 'Puit', 'Aormo', 'Fieck', 'Beirr', 'Dynlt', 'Umnt', 'Yare', 'Untth', 'Tons', 'Wart', 'Aene', 'Ranl', 'Smayd', 'Rherd', 'Eumi', 'Pheech', 'Rhal', 'Sez', 'Oathy', 'Kinlt', 'Elmg', 'Elery', 'Rank', 'Soy', 'Leip', 'Quoud', 'Yanga', 'Ati', 'Onalu', 'Souy', 'Tiant', 'Idyno', 'Englt', 'Ciz', 'Yatu', 'Enthrr', 'Rheund', 'Igari', 'Uara', 'Earda', 'Steic', 'Konn', 'Eete', 'Rhond', 'Oskeli', 'Umk', 'Ards', 'Snuck', 'Icha', 'Menn', 'Avesi', 'Baun', 'Ataie', 'Iougho', 'Unty', 'Ineh', 'Steip', 'Sulr', 'Isrt', 'Kek', 'Vers'}
         add_monster = partial(adapter("add_monster"))
         all_monster_slugs = set()
@@ -99,16 +104,19 @@ def main():
         for monster in control.player1.monsters:
             monster.name = names.pop()
 
-        add_item = partial(adapter("add_item"))
-        Player().add_item(control, add_item('item_potion', 1))
-        Player().add_item(control, add_item('item_super_potion', 1))
-        Player().add_item(control, add_item('item_capture_device', 1))
+        action("add_item", ("item_potion",))
+        action("add_item", ("item_cherry",))
+        action("add_item", ("item_capture_device",))
 
+        for i in range(10):
+            action("add_item", ("item_super_potion",))
         for monster in control.player1.monsters:
             monster.hp = 100
             monster.current_hp = random.randint(1, monster.hp)
             monster.apply_status(Technique("status_poison"))
 
+        for i in range(100):
+            action("add_item", ("item_apple",))
         control.push_state("MonsterInfoState")
 
     control.main()

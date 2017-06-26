@@ -16,13 +16,13 @@ from core.components.ui.menu import Menu
 from core.components.menu.interface import HpBar
 from core.components.pyganim import PygAnimation
 from core.components.sprite import Sprite
-from core.tools import scale_sequence, scale_sprite, scale
+from core.tools import scale, scale_sequence, scale_sprite
 from core.components.locale import translator
+
 trans = translator.translate
 
 # Create a logger for optional handling of debug messages.
 logger = logging.getLogger(__name__)
-logger.debug("%s successfully imported" % __name__)
 
 sprite_layer = 0
 hud_layer = 100
@@ -88,7 +88,7 @@ class CombatAnimations(Menu):
         self.animate_parties_in()
 
         for player, layout in self._layout.items():
-            self.animate_party_hud_in(player, layout['party'][0], 6)
+            self.animate_party_hud_in(player, layout['party'][0])
 
         self.task(partial(self.animate_trainer_leave, self.players[0]), 3)
 
@@ -193,6 +193,7 @@ class CombatAnimations(Menu):
         self.animate(sprite.rect, x=original_x, duration=duration, transition='in_out_circ', delay=.35)
 
     def animate_monster_faint(self, monster):
+        # TODO: rename to distinguish fainting/leaving
         def kill():
             self._monster_sprite_map[monster].kill()
             self.hud[monster].kill()
@@ -303,7 +304,7 @@ class CombatAnimations(Menu):
         self.hud[monster] = hud
         self.build_animate_hp_bar(monster)
 
-    def animate_party_hud_in(self, player, home, slots):
+    def animate_party_hud_in(self, player, home):
         """ Party HUD is the arrow thing with balls.  Yes, that one.
 
         :param player: the player
@@ -324,11 +325,18 @@ class CombatAnimations(Menu):
             centerx = home.left + scale(13)
             offset = -scale(8)
 
-        for index in range(slots):
-            sprite = self.load_sprite('gfx/ui/combat/empty_slot_icon.png',
-                                      top=tray.rect.top + scale(1),
-                                      centerx=centerx - index * offset,
-                                      layer=hud_layer)
+        for index in range(player.party_limit):
+            sprite = None
+            if len(player.monsters) > index:
+                sprite = self.load_sprite('gfx/ui/icons/party/party_icon01.png',
+                                          top=tray.rect.top + scale(1),
+                                          centerx=centerx - index * offset,
+                                          layer=hud_layer)
+            else:
+                sprite = self.load_sprite('gfx/ui/combat/empty_slot_icon.png',
+                                          top=tray.rect.top + scale(1),
+                                          centerx=centerx - index * offset,
+                                          layer=hud_layer)
 
             # convert alpha image to image with a colorkey so we can set_alpha
             sprite.image = tools.convert_alpha_to_colorkey(sprite.image)
@@ -434,18 +442,18 @@ class CombatAnimations(Menu):
             animate = partial(self.animate, duration=0.1, transition='linear', delay=initial_delay)
             animate(capdev.rect, y=scale(3), relative=True)
 
-            animate = partial(self.animate, duration=0.2, transition='linear', delay=initial_delay+0.1)
-            animate(capdev.rect, y= -scale(6), relative=True)
+            animate = partial(self.animate, duration=0.2, transition='linear', delay=initial_delay + 0.1)
+            animate(capdev.rect, y=-scale(6), relative=True)
 
-            animate = partial(self.animate, duration=0.1, transition='linear', delay=initial_delay+0.3)
+            animate = partial(self.animate, duration=0.1, transition='linear', delay=initial_delay + 0.3)
             animate(capdev.rect, y=scale(3), relative=True)
 
         for i in range(0, num_shakes):
-            shake_ball(1.8 + i*1.0) # leave a 0.6s wait between each shake
+            shake_ball(1.8 + i * 1.0) # leave a 0.6s wait between each shake
 
         if is_captured:
             self.task(kill, 2 + num_shakes)
         else:
-            self.task(partial(toggle_visible, monster_sprite), 1.8 + num_shakes*1.0) # make the monster appear again!
-            self.task(tech.play, 1.8 + num_shakes*1.0)
-            self.task(capdev.kill, 1.8 + num_shakes*1.0)
+            self.task(partial(toggle_visible, monster_sprite), 1.8 + num_shakes * 1.0) # make the monster appear again!
+            self.task(tech.play, 1.8 + num_shakes * 1.0)
+            self.task(capdev.kill, 1.8 + num_shakes * 1.0)

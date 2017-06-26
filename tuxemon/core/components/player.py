@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Tuxemon
@@ -43,7 +42,6 @@ trans = translator.translate
 
 # Create a logger for optional handling of debug messages.
 logger = logging.getLogger(__name__)
-logger.debug("%s successfully imported" % __name__)
 
 # Class definition for the player.
 class Player(object):
@@ -437,7 +435,7 @@ class Player(object):
                 # somehow we are already at the next _plan step, just pop
                 self.path.pop()
         else:
-            print("self.path=" + str(len(self.path)) + ", self.moving="+str(self.moving))
+            logger.debug("self.path=" + str(len(self.path)) + ", self.moving="+str(self.moving))
 
     # def draw(self, screen, layer):
     #     """Draws the player to the screen depending on whether or not they are moving or
@@ -510,9 +508,10 @@ class Player(object):
             except AttributeError:
                 return frame
 
-        state = self.animation_mapping[self.moving][self.move_direction]
-        frame_dict = self.sprite if self.moving else self.standing
         surfaces = list()
+        direction = self.move_direction if self.moving else self.facing
+        frame_dict = self.sprite if self.moving else self.standing
+        state = self.animation_mapping[self.moving][direction]
 
         # If this is the bottom half, we need to draw it at a lower position.
         offset = self.standing["front"].get_height() / 2
@@ -648,12 +647,11 @@ class Player(object):
         :returns: None
 
         """
-        self.monsters.append(monster)
-        # if len(self.monsters) >= self.party_limit:
-        #     print("Send to PCState")
-        #     self.storage["monsters"].append(monster)
-        # else:
-        #     self.monsters.append(monster)
+
+        if len(self.monsters) >= self.party_limit:
+            self.storage["monsters"].append(monster)
+        else:
+            self.monsters.append(monster)
 
     def find_monster(self, slug):
         """Finds a monster in the player's list of monsters.

@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Tuxemon
@@ -46,7 +45,6 @@ from core.components.ui.font import shadow_text
 
 # Create a logger for optional handling of debug messages.
 logger = logging.getLogger(__name__)
-logger.debug('%s imported' % __name__)
 
 # global translator
 trans = translator.translate

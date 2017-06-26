@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Tuxemon
@@ -56,7 +55,7 @@ class Config(object):
 
         self.fullscreen = self.fullscreen_check()
         self.scaling = self.config.get("display", "scaling")
-        self.fps = int(self.config.get("display", "fps"))
+        self.fps = float(self.config.get("display", "fps"))
         self.collision_map = self.config.get("display", "collision_map")
 
         self.controller_overlay = self.config.get("display", "controller_overlay")
@@ -71,6 +70,10 @@ class Config(object):
             self.locale = self.config.get("game", "locale")
         except configparser.NoOptionError:
             self.locale = "en_US"
+        try:
+            self.show_fps = int(self.config.get("display", "show_fps"))
+        except configparser.NoOptionError:
+            self.show_fps = 0
 
         self.player_animation_speed = float(self.config.get("player", "animation_speed"))
 

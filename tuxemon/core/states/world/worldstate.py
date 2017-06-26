@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Tuxemon
@@ -23,7 +22,7 @@
 # Contributor(s):
 #
 # William Edwards <shadowapex@gmail.com>
-#
+# Leif Theden <leif.theden@gmail.com>
 #
 # core.states.world Handles the world map and player movement.
 #
@@ -32,17 +31,13 @@ from __future__ import division
 
 import itertools
 import logging
-import math
-
 from os.path import join
 
 import pygame
 from six.moves import map as imap
 
-from core import prepare
-from core import state
-from core.components import map
-from core.components import networking
+from core import prepare, state
+from core.components import map, networking
 from core.components.game_event import GAME_EVENT, INPUT_EVENT
 
 # Create a logger for optional handling of debug messages.
@@ -54,25 +49,6 @@ class WorldState(state.State):
     """
 
     preloaded_maps = {}
-
-    # def __init__(self):
-    #     self.state = "WorldState"
-    #     self.map_size = []
-    #     self.screen = None
-    #     self.screen_rect = None
-    #     self.tile_size = None
-    #     self.icon_size = None
-    #     self.resolution = None
-    #     self.native_resolution = None
-    #     self.player1 = None
-    #     self.npcs = None
-    #     self.npcs_off_map = None
-    #     self.wants_duel = None
-    #     self.global_x = None
-    #     self.global_x_diff = None
-    #     self.global_y = None
-    #     self.global_y_diff = None
-    #     self.start_position = None
 
     def startup(self):
         # Provide access to the screen surface
@@ -189,6 +165,8 @@ class WorldState(state.State):
         self.cinema_top['on_position'] = [0, 0]
         self.cinema_bottom['on_position'] = [
             0, self.resolution[1] - self.cinema_bottom['surface'].get_height()]
+
+        self.map_animations = dict()
 
     def fade_and_teleport(self, duration=2):
         """ Fade out, teleport, fade in
@@ -410,16 +388,29 @@ class WorldState(state.State):
         :returns: None
 
         """
-        # interlace player sprites with tiles surfaces.
-        # eventually, maybe use pygame sprites or something similar
-        surfaces = self.player1.get_sprites()
-        for npc in self.npcs:
-            surfaces.extend(npc.get_sprites())
-
         # center the camera on the player sprite
         sx, sy = prepare.SCREEN_SIZE
         self.current_map.renderer.center((-self.global_x + sx / 2,
                                           -self.global_y + sy / 2))
+
+        # interlace player sprites with tiles surfaces.
+        # eventually, maybe use pygame sprites or something similar
+        surfaces = self.player1.get_sprites()
+
+        # get npc surfaces/sprites
+        for npc in self.npcs:
+            surfaces.extend(self.npcs[npc].get_sprites())
+
+        # get map_animation
+        ox, oy = self.current_map.renderer.get_center_offset()
+        for anim_data in self.map_animations.values():
+            anim = anim_data['animation']
+            if not anim.isFinished() and anim.visibility:
+                x, y = anim_data["position"]
+                x += ox
+                y += oy
+                frame = (anim.getCurrentFrame(), (x, y), anim_data['layer'])
+                surfaces.append(frame)
 
         # draw the map and sprites
         self.current_map.renderer.draw(surface, surface.get_rect(), surfaces)
@@ -472,10 +463,10 @@ class WorldState(state.State):
 
     def move_npcs(self):
         """ Move NPCs and Players around according to their state
-        
+
         This function may be moved to a server
-        
-        :return: 
+
+        :return:
         """
         # Draw any game NPC's
         for npc in self.npcs.values():
@@ -557,28 +548,28 @@ class WorldState(state.State):
         return pygame.Rect(npc, self.tile_size)
 
     def debug_drawing(self, surface):
-            # We need to iterate over all collidable objects.  So, let's start
-            # with the walls/collision boxes.
-            box_iter = imap(self._collision_box_to_pgrect, self.collision_map)
+        # We need to iterate over all collidable objects.  So, let's start
+        # with the walls/collision boxes.
+        box_iter = imap(self._collision_box_to_pgrect, self.collision_map)
 
-            # Next, deal with solid NPCs.
-            npc_iter = imap(self._npc_to_pgrect, self.npcs.values())
+        # Next, deal with solid NPCs.
+        npc_iter = imap(self._npc_to_pgrect, self.npcs.values())
 
-            for item in itertools.chain(box_iter, npc_iter):
-                surface.blit(self.collision_tile, (item[0], item[1]))
+        for item in itertools.chain(box_iter, npc_iter):
+            surface.blit(self.collision_tile, (item[0], item[1]))
 
-            if self.player1.direction["up"]:
-                surface.blit(self.collision_tile, (
-                    self.player1.position[0], self.player1.position[1] - self.tile_size[1]))
-            elif self.player1.direction["down"]:
-                surface.blit(self.collision_tile, (
-                    self.player1.position[0], self.player1.position[1] + self.tile_size[1]))
-            elif self.player1.direction["left"]:
-                surface.blit(self.collision_tile, (
-                    self.player1.position[0] - self.tile_size[0], self.player1.position[1]))
-            elif self.player1.direction["right"]:
-                surface.blit(self.collision_tile, (
-                    self.player1.position[0] + self.tile_size[0], self.player1.position[1]))
+        if self.player1.direction["up"]:
+            surface.blit(self.collision_tile, (
+                self.player1.position[0], self.player1.position[1] - self.tile_size[1]))
+        elif self.player1.direction["down"]:
+            surface.blit(self.collision_tile, (
+                self.player1.position[0], self.player1.position[1] + self.tile_size[1]))
+        elif self.player1.direction["left"]:
+            surface.blit(self.collision_tile, (
+                self.player1.position[0] - self.tile_size[0], self.player1.position[1]))
+        elif self.player1.direction["right"]:
+            surface.blit(self.collision_tile, (
+                self.player1.position[0] + self.tile_size[0], self.player1.position[1]))
 
     def midscreen_animations(self, surface):
         """Handles midscreen animations that will be drawn UNDER menus and dialog.
@@ -665,16 +656,17 @@ class WorldState(state.State):
         # engine loads event conditions and event actions from the currently
         # loaded map. If we change maps, we need to update this.
         if map_name not in self.preloaded_maps.keys():
-            print("Map was not preloaded. Loading from disk.")
+            logger.debug("Map was not preloaded. Loading from disk.")
             map_data = self.load_map(map_name)
         else:
-            print("%s was found in preloaded maps." % map_name)
+            logger.debug("%s was found in preloaded maps." % map_name)
             map_data = self.preloaded_maps[map_name]
             self.clear_preloaded_maps()
 
         # reset controls and stop moving to prevent player from
         # moving after the teleport and being out of control
         self.game.reset_controls()
+
         try:
             self.player1.direction['up'] = False
             self.player1.direction['down'] = False
@@ -688,6 +680,8 @@ class WorldState(state.State):
         self.collision_map = map_data["collision_map"]
         self.collision_lines_map = map_data["collision_lines_map"]
         self.map_size = map_data["map_size"]
+
+        # TODO: remove this monkey [patching!] business for the main control/game
         self.game.events = map_data["events"]
         self.game.inits = map_data["inits"]
         self.game.interacts = map_data["interacts"]
@@ -730,7 +724,7 @@ class WorldState(state.State):
 
         :param tile_position: An [x, y] tile position.
 
-        :type event: List
+        :type tile_position: List
 
         :rtype: List
         :returns: The pixel coordinates to draw at the given tile position.
@@ -788,7 +782,6 @@ class WorldState(state.State):
         :rtype: None
         :returns: None
         """
-        print(event_data)
         target = registry[event_data["target"]]["sprite"]
         target_name = str(target.name)
         networking.update_client(target, event_data["char_dict"], self.game)

@@ -10,6 +10,8 @@ from core import tools
 from core.components.locale import translator
 from core.components.ui.popup import PopUpMenu
 from core.components.menu.interface import MenuItem
+from core.components.menu.menu import Menu
+from core.components.sprite import MenuSpriteGroup, SpriteGroup
 from core.components.ui.menu import Menu
 from core.components.sprite import SpriteGroup
 from core.components.ui.layout import MenuLayout
@@ -19,7 +21,6 @@ from core.components.technique import Technique
 
 # Create a logger for optional handling of debug messages.
 logger = logging.getLogger(__name__)
-logger.debug("%s successfully imported" % __name__)
 
 
 class MainCombatMenuState(PopUpMenu):
@@ -55,7 +56,7 @@ class MainCombatMenuState(PopUpMenu):
         # TODO: only works for player0
         self.game.pop_state(self)
         combat_state = self.game.get_state_name("CombatState")
-        combat_state.remove_player(combat_state.players[0])
+        combat_state.trigger_player_run(combat_state.players[0])
 
     def open_swap_menu(self):
         """ Open menus to swap monsters in party
@@ -71,11 +72,11 @@ class MainCombatMenuState(PopUpMenu):
                 return
             elif monster.current_hp < 1:
                 tools.open_dialog(self.game, [trans('combat_fainted', {"name": monster.name})])
-            player = self.game.player1
-            target = player.monsters[0]
-            swap = Technique("technique_swap")
-            swap.other = monster
             combat_state = self.game.get_state_name("CombatState")
+            swap = Technique("technique_swap")
+            swap.combat_state = combat_state
+            player = self.game.player1
+            target = monster
             combat_state.enqueue_action(player, swap, target)
             self.game.pop_state()  # close technique menu
             self.game.pop_state()  # close the monster action menu
@@ -150,7 +151,7 @@ class MainCombatMenuState(PopUpMenu):
             # open menu to choose target of technique
             technique = menu_item.game_object
             combat_state = self.game.get_state_name("CombatState")
-            state = self.game.push_state("CombatTargetMenuState",player=combat_state.players[0],
+            state = self.game.push_state("CombatTargetMenuState", player=combat_state.players[0],
                                          user=self.monster, action=technique)
             state.on_menu_selection = partial(enqueue_technique, technique)
 
