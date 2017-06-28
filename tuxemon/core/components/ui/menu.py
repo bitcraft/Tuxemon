@@ -38,14 +38,9 @@ from core.components.ui.widget import Widget
 class Menu(Widget):
     """ A class to create menu objects.
 
-    Menus are a type of game state.  Menus that are the top state
-    will receive player input and respond to it.  They may be
-    stacked, so that menus are nested.
-
     :background: String
 
     :ivar rect: The rect of the menu in pixels, defaults to 0, 0, 400, 200.
-    :ivar state: An arbitrary state of the menu. E.g. "opening" or "closing".
     :ivar selected_index: The index position of the currently selected menu item.
     :ivar menu_items: A list of available menu items.
     """
@@ -194,20 +189,22 @@ class Menu(Widget):
             if selected is not None:
                 selected.in_focus = False
 
-    # def refresh_layout(self):
-    #     """ Fit border to contents and hide/show cursor
-    #
-    #     :return:
-    #     """
-    #     # self.menu_items.expand = not self.shrink_to_items
-    #
-    #     # check if we have items, but they are all disabled
-    #     disabled = all(i.disabled for i in self.menu_items)
-    #
-    #     if self.menu_items and not disabled:
-    #         self.show_cursor()
-    #     else:
-    #         self.hide_cursor()
+    def refresh_layout(self):
+        """ Fit border to contents and hide/show cursor
+
+        :return:
+        """
+        # self.menu_items.expand = not self.shrink_to_items
+
+        # check if we have items, but they are all disabled
+        disabled = all(i.disabled for i in self.menu_items)
+
+        self.trigger_cursor_update(False)
+
+        if self.menu_items and not disabled:
+            self.show_cursor()
+        else:
+            self.hide_cursor()
 
     def process_event(self, event):
         """ Process pygame input events
@@ -301,7 +298,6 @@ class Menu(Widget):
 
         # determine if the contents need to be scrolled on the screen
         diff = tools.calc_scroll_thing(selected_rect, menu_rect, self.rect)
-        print(diff)
 
         if diff:
             remove_animations_of(menu_rect, self.animations)

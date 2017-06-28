@@ -28,20 +28,17 @@ from __future__ import division
 
 import pygame as pg
 
-from core import prepare, state, tools
+from core import prepare, tools
 from core.components.ui.graphicbox import GraphicBox
 from core.components.ui.widget import Widget
 
 
 class Window(Widget):
     """ Graphical window
-    A window is a type of state.  Top windows will have input focus.
 
-    Windows...:
-      * are typically decorated and contain text or a menu
-      * may cover the entire screen
+    Windows...
+      * typically contain text or a menu
       * decorate themselves
-      * graphical elements in the window are drawn relative to the upper left corner
     """
 
     # Window Defaults
@@ -55,14 +52,8 @@ class Window(Widget):
     force_draw = True
 
     def __init__(self):
-        self.children = list()
-        self.parent = None
-        self.disabled = False
         self.state = "closed"         # closed, opening, normal, disabled, closing
         super(Window, self).__init__()
-
-        self._anchors = dict()        # used to position the menu/state
-        self.rect = self.rect.copy()  # do not remove!
 
         self.load_graphics()
 
@@ -101,6 +92,7 @@ class Window(Widget):
             gb = GraphicBox(border, background, self.background_color)
             gb.rect = self.rect.copy()
             self.add_widget(gb)
+            self.padding = tools.scale(16)
 
     def fit_border(self):
         """ Resize the window border to fit the contents of the menu
@@ -126,45 +118,6 @@ class Window(Widget):
 
         # move the bounding box taking account the anchors
         self.position_rect()
-
-    def calc_internal_rect(self):
-        """ Calculate the area inside the borders, if any.
-        If no borders are present, a copy of the window rect will be returned
-
-        :returns: Rect representing space inside borders, if any
-        :rtype: pygame.Rect
-        """
-        # return self._renderer.calc_inner_rect(self.rect)
-        return self.rect.copy()
-
-    def position_rect(self):
-        """ Reposition rect taking in account the anchors
-        """
-        for attribute, value in self._anchors.items():
-            setattr(self.rect, attribute, value)
-
-    def anchor(self, attribute, value):
-        """ Set an anchor for the menu window
-
-        You can pass any string value that is used in a pygame rect,
-        for example: "center", "topleft", and "right".
-
-        When changes are made to the window or it is being opened
-        or sized, then these values passed as anchors will override
-        others.  The order of which each anchor is applied is not
-        necessarily going to match the order they were set, as the
-        implementation relies on a dictionary.
-
-        Take care to make sure values do not overlap.
-
-        :param attribute:
-        :param value:
-        :return:
-        """
-        if value is None:
-            del self._anchors[attribute]
-        else:
-            self._anchors[attribute] = value
 
     def on_open(self):
         """ Hook is called after opening animation has finished

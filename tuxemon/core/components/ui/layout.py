@@ -31,6 +31,7 @@ import math
 import pygame
 
 from core.components.ui.widget import Widget
+from core.tools import scale
 
 
 class Layout(Widget):
@@ -282,18 +283,25 @@ class GridLayout(RelativeLayout, MenuLayout):
         if not len(self):
             return
 
+        margin = scale(2)
+
         # max_width = 0
+
+        # TODO: make configuration option
         max_height = 0
         for item in self.children:
             # max_width = max(max_width, item.rect.width)
             max_height = max(max_height, item.rect.height)
 
+        spacing = max_height + margin
+
         self.update_rect_from_parent()
-        width, height = self.rect.size
+        inner = self.rect
+        width, height = inner.size
 
         items_per_column = math.ceil(len(self) / self.columns)
 
-        print(self, width, height, max_height, items_per_column)
+        self.expand = False
 
         if self.expand:
             # fill available space

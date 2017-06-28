@@ -49,11 +49,14 @@ class Widget(object):
     rect = Rect(0, 0, 0, 0)
 
     def __init__(self):
+        self.rect = self.rect.copy()  # do not remove!
         self.parent = None
         self.disabled = False
         self.children = list()
         self.animations = Group()
+        self.padding = 0
         self._needs_refresh = True
+        self._anchors = dict()  # used to position the menu/state
 
     def __repr__(self):
         return "<Widget: {}>".format(self.__class__.__name__)
@@ -202,11 +205,15 @@ class Widget(object):
     def update_rect_from_parent(self):
         if self.parent:
             self.parent.update_rect_from_parent()
-            self.rect = Rect(self.parent.rect)
+            self.rect = Rect(self.parent.inner_rect)
+            self.inner_rect = self.calc_internal_rect()
         else:
             from core import prepare
 
             self.rect = Rect((0, 0), prepare.SCREEN_SIZE)
+            self.inner_rect = self.calc_internal_rect()
+
+        print(self, self.rect, self.inner_rect, self.padding)
 
     def draw(self, surface):
         """ Cause this and all children to draw themselves to the surface
@@ -221,6 +228,9 @@ class Widget(object):
         """
         if self._needs_refresh:
             self.refresh_layout()
+            self._needs_refresh = False
+            for child in self.children:
+                child._needs_refresh = True
 
         for child in self.children:
             child.draw(surface)
@@ -235,12 +245,23 @@ class Widget(object):
         """
         pass
 
+    def calc_internal_rect(self):
+        """ Calculate the area inside the borders, if any.
+        If no padding is present, a copy of the window rect will be returned
+
+        :returns: Rect representing space inside borders, if any
+        :rtype: pygame.Rect
+        """
+        inner = self.rect.inflate(-self.padding, -self.padding)
+        return inner
+
     def calc_bounding_rect(self):
         """ Return a rect that contains this and all children
 
         :rtype: pg.Rect
         """
-        kinder = list(self.walk())
+        kinder = list(self.children)
+
         if not kinder:
             return self.rect
         elif len(kinder) == 1:
@@ -285,12 +306,12 @@ class Widget(object):
 
         :return:
         """
-        for widget in self.children.copy():
+        for widget in list(self.children):
             self.remove_widget(widget)
         self._needs_refresh = True
 
     def refresh_layout(self):
-        """ Fit border to contents and hide/show cursor
+        """ IDK
 
         :return:
         """
@@ -303,3 +324,32 @@ class Widget(object):
         """
         xx, yy = self.parent.rect.topleft
         return x + xx, y + yy
+
+    def position_rect(self):
+        """ Reposition rect taking in account the anchors
+        """
+        for attribute, value in self._anchors.items():
+            setattr(self.rect, attribute, value)
+
+    def anchor(self, attribute, value):
+        """ Set an anchor for the menu window
+
+        You can pass any string value that is used in a pygame rect,
+        for example: "center", "topleft", and "right".
+
+        When changes are made to the window or it is being opened
+        or sized, then these values passed as anchors will override
+        others.  The order of which each anchor is applied is not
+        necessarily going to match the order they were set, as the
+        implementation relies on a dictionary.
+
+        Take care to make sure values do not overlap.
+
+        :param attribute:
+        :param value:
+        :return:
+        """
+        if value is None:
+            del self._anchors[attribute]
+        else:
+            self._anchors[attribute] = value

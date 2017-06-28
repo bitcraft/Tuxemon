@@ -61,7 +61,7 @@ class GraphicBox(Widget):
         if border:
             self.set_border(border)
 
-    def calc_inner_rect(self, rect):
+    def calc_inside(self, rect):
         """ Return rect representing area inside the borders
 
         :param rect:
@@ -83,8 +83,10 @@ class GraphicBox(Widget):
     def draw(self, surface):
         self.update_rect_from_parent()
 
-        rect = self.rect
-        inner = self.calc_inner_rect(rect)
+        # most widgets will draw using the parent's inner rect.
+        # the graphic box will use the parent's real rect
+        rect = self.parent.rect
+        inner = self.calc_inside(rect)
 
         # fill center with a _background surface
         if self._background:
