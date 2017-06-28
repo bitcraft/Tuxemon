@@ -35,12 +35,13 @@ import pygame
 from core import prepare
 from core import tools
 from core.components.sprite import SpriteGroup
+from core.components.ui.widget import Widget
 
 # Create a logger for optional handling of debug messages.
 logger = logging.getLogger(__name__)
 
 
-class State(object):
+class State(Widget):
     """ This is a prototype class for States.
 
     All states should inherit from it. No direct instances of this
@@ -60,9 +61,8 @@ class State(object):
     """
     __metaclass__ = ABCMeta
 
-    rect = pygame.Rect((0, 0), prepare.SCREEN_SIZE)
-    transparent = False   # ignore all background/borders
-    force_draw = False    # draw even if completely under another state
+    transparent = False  # ignore all background/borders
+    force_draw = False  # draw even if completely under another state
 
     def __init__(self):
         """ Do not override this unless there is a special need.
@@ -73,11 +73,16 @@ class State(object):
         :param control: State Manager / Control / Game... all the same
         :returns: None
         """
+        super(State, self).__init__()
+
         # self.game = control  # TODO: rename 'game' to 'control'?
         self.start_time = 0.0
         self.current_time = 0.0
         self.animations = pygame.sprite.Group()  # only animations and tasks
-        self.sprites = SpriteGroup()             # all sprites that draw on the screen
+        self.sprites = SpriteGroup()  # all sprites that draw on the screen
+
+    def __repr__(self):
+        return "<State: {}".format(self.name)
 
     @property
     def name(self):
@@ -98,24 +103,6 @@ class State(object):
         self.sprites.add(sprite, layer=layer)
         return sprite
 
-    def process_event(self, event):
-        """ Processes events that were passed from the main event loop.
-
-        This function can choose to return the event, or any other in
-        response to the event passed.  If the same, or any other event
-        is returned, then it will be passed down to other states.
-
-        :param event: A pygame key event from pygame.event.get()
-        :type event: PyGame Event
-        :returns: Pygame Event or None
-        :rtype: pygame Event
-
-        """
-        return event
-
-    # def __del__(self):
-    #     print "dying", self
-
     def update(self, time_delta):
         """ Time update function for state.  Must be overloaded in children.
 
@@ -125,16 +112,6 @@ class State(object):
         :rtype: None
         """
         pass
-
-    # def draw(self, surface):
-    #     """ Render the state to the surface passed.  Must be overloaded in children
-    #
-    #     :param surface: Surface to be rendered onto
-    #     :type surface: pygame.Surface
-    #     :returns: None
-    #     :rtype: None
-    #     """
-    #     pass
 
     def startup(self, **kwargs):
         """ Called when scene is added to State Stack
@@ -270,7 +247,7 @@ class StateManager(object):
         classes = inspect.getmembers(sys.modules[import_name], inspect.isclass)
 
         for c in (i[1] for i in classes):
-            if issubclass(c, State):
+            if issubclass(c, Widget):
                 yield c
 
     def collect_states_from_path(self, folder):

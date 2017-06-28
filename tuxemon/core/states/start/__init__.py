@@ -30,15 +30,16 @@
 #
 """This module contains the Start state.
 """
+from __future__ import absolute_import
+
 import logging
 from functools import partial
 
 from core import prepare
-from core.state import State
-from core.components.event.actions import core as core_actions
-from core.components.ui.popup import PopUpMenu
-from core.components.ui.menu import Menu
 from core.components.locale import translator
+from core.components.ui.menu import Menu
+from core.components.ui.popup import PopUpMenu
+from core.state import State
 
 trans = translator.translate
 
@@ -56,6 +57,7 @@ class BackgroundState(State):
 
     eventually the need for this will be phased out
     """
+
     def draw(self, surface):
         surface.fill((0, 0, 0, 0))
 
@@ -66,10 +68,10 @@ class BackgroundState(State):
 class StartState(PopUpMenu):
     """ The state responsible for the start menu.
     """
-    shrink_to_items = True
+    shrink_to_items = False
 
     def startup(self, *args, **kwargs):
-        super(StartState, self).startup(*args, **kwargs)
+        # super(StartState, self).startup(*args, **kwargs)
 
         menu = Menu()
         self.add_widget(menu)
@@ -87,7 +89,7 @@ class StartState(PopUpMenu):
             pass
 
         def exit_game():
-            core_actions.Core().quit(self.game, None)
+            self.game.event_engine.execute_action("quit")
 
         menu_items_map = (
             ('menu_new_game', new_game),

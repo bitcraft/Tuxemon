@@ -32,38 +32,38 @@ class PopUpMenu(Window):
 
     """
 
-    def animate_open(self):
-        """ Called when menu is going to open
-
-        Menu will not receive input during the animation
-        Menu will only play this animation once
-
-        Must return either an Animation or Task to attach callback
-        Only modify state of the menu Rect
-        Do not change important state attributes
-
-        :returns: Animation or Task
-        :rtype: core.components.animation.Animation
-        """
-        return
-
-        # anchor the center of the popup
-        rect = self.game.screen.get_rect()
-        self.anchor("center", rect.center)
-
-        rect = self.calc_final_rect()
-
-        # set rect to a small size for the initial values of the animation
-        self.rect = self.rect.copy()           # required.  do not remove.
-        self.rect.height = int(rect.height * .1)
-        self.rect.width = int(rect.width * .1)
-        self.rect.center = rect.center
-
-        # if this statement were removed, then the menu would
-        # refresh and the size animation would be lost
-        self._needs_refresh = False
-
-        # create animation to open window with
-        ani = self.animate(self.rect, height=rect.height, width=rect.width, duration=.20)
-        ani.update_callback = lambda: setattr(self.rect, "center", rect.center)
-        return ani
+    # def animate_open(self):
+    #     """ Called when menu is going to open
+    #
+    #     Menu will not receive input during the animation
+    #     Menu will only play this animation once
+    #
+    #     Must return either an Animation or Task to attach callback
+    #     Only modify state of the menu Rect
+    #     Do not change important state attributes
+    #
+    #     :returns: Animation or Task
+    #     :rtype: core.components.animation.Animation
+    #     """
+    #     return
+    #
+    #     # anchor the center of the popup
+    #     rect = self.game.screen.get_rect()
+    #     self.anchor("center", rect.center)
+    #
+    #     rect = self.calc_final_rect()
+    #
+    #     # set rect to a small size for the initial values of the animation
+    #     self.rect = self.rect.copy()           # required.  do not remove.
+    #     self.rect.height = int(rect.height * .1)
+    #     self.rect.width = int(rect.width * .1)
+    #     self.rect.center = rect.center
+    #
+    #     # if this statement were removed, then the menu would
+    #     # refresh and the size animation would be lost
+    #     self._needs_refresh = False
+    #
+    #     # create animation to open window with
+    #     ani = self.animate(self.rect, height=rect.height, width=rect.width, duration=.20)
+    #     ani.update_callback = lambda: setattr(self.rect, "center", rect.center)
+    #     return ani

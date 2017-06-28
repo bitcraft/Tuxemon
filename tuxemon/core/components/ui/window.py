@@ -33,7 +33,7 @@ from core.components.ui.graphicbox import GraphicBox
 from core.components.ui.widget import Widget
 
 
-class Window(state.State, Widget):
+class Window(Widget):
     """ Graphical window
     A window is a type of state.  Top windows will have input focus.
 
@@ -52,6 +52,7 @@ class Window(state.State, Widget):
     background = None                 # filename for image used to draw the background
     draw_borders = True
     transparent = False
+    force_draw = True
 
     def __init__(self):
         self.children = list()
@@ -78,6 +79,9 @@ class Window(state.State, Widget):
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_ESCAPE and self.escape_key_exits:
                 self.close()
+                return None
+
+        return super(Window, self).process_event(event)
 
     def load_graphics(self):
         """ Loads all the graphical elements of the window

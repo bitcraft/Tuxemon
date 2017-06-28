@@ -26,18 +26,18 @@
 #
 from __future__ import absolute_import
 from __future__ import division
+from __future__ import print_function
 
 import logging
-
-import pygame as pg
 
 from core.components.animation import Animation
 from core.components.animation import Task
 from core.components.animation import remove_animations_of
+from core.rect import Rect
+from core.group import Group
 
 # Create a logger for optional handling of debug messages.
 logger = logging.getLogger(__name__)
-logger.debug("{} successfully imported".format(__name__))
 
 
 class Widget(object):
@@ -46,14 +46,17 @@ class Widget(object):
     * Widgets can contain other widgets
     * Widgets can define the layout of their children, but not themselves
     """
-    rect = pg.Rect(0, 0, 0, 0)
+    rect = Rect(0, 0, 0, 0)
 
     def __init__(self):
         self.parent = None
         self.disabled = False
         self.children = list()
-        self.animations = pg.sprite.Group()
+        self.animations = Group()
         self._needs_refresh = True
+
+    def __repr__(self):
+        return "<Widget: {}>".format(self.__class__.__name__)
 
     def __len__(self):
         kinder = list(self.walk())
@@ -106,7 +109,8 @@ class Widget(object):
 
     def walk(self, restrict=False, loopback=False):
         gen = self._walk(restrict, loopback)
-        yield next(gen)
+        next(gen)  # this is always self
+
         for node in gen:
             if node is self:
                 return
@@ -138,6 +142,17 @@ class Widget(object):
         :rtype: pygame Event
 
         """
+        print(self)
+        print("children: ", list(self.walk()))
+        print("real    : ", self.children)
+        print()
+
+        for child in self.children:
+            if event is None:
+                break
+
+            event = child.process_event(event)
+
         return event
 
     def animate(self, *targets, **kwargs):
@@ -177,11 +192,19 @@ class Widget(object):
         remove_animations_of(target, self.animations)
 
     def update(self, time_delta):
-        for child in self.walk():
-            if child is not self:
-                child.update(time_delta)
+        for child in self.children:
+            child.update(time_delta)
 
         self.animations.update(time_delta)
+
+    def update_rect_from_parent(self):
+        if self.parent:
+            self.parent.update_rect_from_parent()
+            self.rect = Rect(self.parent.rect)
+        else:
+            from core import prepare
+
+            self.rect = Rect((0, 0), prepare.SCREEN_SIZE)
 
     def draw(self, surface):
         """ Cause this and all children to draw themselves to the surface
@@ -197,9 +220,8 @@ class Widget(object):
         if self._needs_refresh:
             self.refresh_layout()
 
-        for child in self.walk():
-            if child is not self:
-                child.draw(surface)
+        for child in self.children:
+            child.draw(surface)
 
         self._draw(surface)
 
@@ -220,7 +242,7 @@ class Widget(object):
         if not kinder:
             return self.rect
         elif len(kinder) == 1:
-            return pg.Rect(kinder[0].rect)
+            return Rect(kinder[0].rect)
         else:
             return kinder[0].rect.unionall([s.rect for s in kinder[1:]])
 
@@ -281,17 +303,3 @@ class Widget(object):
         """
         xx, yy = self.parent.rect.topleft
         return x + xx, y + yy
-
-        # self._needs_refresh = False
-        # self.menu_items.expand = not self.shrink_to_items
-        #
-        # # check if we have items, but they are all disabled
-        # disabled = all(not i.enabled for i in self.menu_items)
-        #
-        # if self.menu_items and not disabled:
-        #     self.show_cursor()
-        # else:
-        #     self.hide_cursor()
-        #
-        # if self.shrink_to_items:
-        #     self.fit_border()

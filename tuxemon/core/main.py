@@ -46,9 +46,6 @@ def main():
     :returns: None
 
     """
-    import logging
-    logging.basicConfig(level=logging.DEBUG)
-
     import pygame
     from .control import PygameControl
 
@@ -62,20 +59,21 @@ def main():
     # since menus do not clean up dirty areas, the blank,
     # "Background state" will do that.  The alternative is creating
     # a system for states to clean up their dirty screen areas.
-    control.push_state("BackgroundState")
+    # control.push_state("BackgroundState")
 
     # basically the main menu
     control.push_state("StartState")
 
     # Show the splash screen if it is enabled in the game configuration
-    if prepare.CONFIG.splash == "1":
-        control.push_state("SplashState")
-        control.push_state("FadeInTransition")
+    # if prepare.CONFIG.splash == "1":
+    #     control.push_state("SplashState")
+    #     control.push_state("FadeInTransition")
 
     # block of code useful for testing
     if debug:
+        logging.basicConfig(level=logging.DEBUG)
         logger.info("********* DEBUG OPTIONS ENABLED *********")
-    if 0:
+
         import random
         from core.components.event.actions.player import Player
         from core.components.monster import monsters as monster_db

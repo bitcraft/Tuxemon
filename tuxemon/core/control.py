@@ -65,8 +65,6 @@ class Control(StateManager):
         self.caption = caption
         self.done = False
         self.clock = pg.time.Clock()
-        self.fps = 30.0
-        self.show_fps = True
         self.fps = prepare.CONFIG.fps
         self.show_fps = prepare.CONFIG.show_fps
         self.current_time = 0.0
@@ -228,6 +226,7 @@ class Control(StateManager):
         draw = True
         to_draw = list()
         full_screen = self.screen.get_rect()
+
         for state in self.active_states:
             state.update(dt)
             if draw:
@@ -239,6 +238,8 @@ class Control(StateManager):
                 and state.rect == full_screen
                 and not state.force_draw):
                 draw = False
+
+        self.screen.fill((0, 0, 0))
 
         # draw from bottom up for proper layering
         for state in reversed(to_draw):

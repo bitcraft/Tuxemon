@@ -37,7 +37,9 @@ class Layout(Widget):
     """
     Layouts contain widgets and position them.
     """
-    pass
+
+    def __repr__(self):
+        return "<Layout ({})>".format(len(self.children))
 
 
 class MenuLayout(Layout):
@@ -83,7 +85,8 @@ class MenuLayout(Layout):
         """
         # sanity check:
         # if there are 0 or 1 enabled items, then ignore movement
-        enabled = len([i for i in self if i.enabled])
+        enabled = len([i for i in self.children if i.enabled])
+
         if enabled < 2:
             return 0
 
@@ -186,12 +189,6 @@ class RelativeLayout(Layout):
         self.update_rect_from_parent()
         return rect.move(self.rect.topleft)
 
-    def update_rect_from_parent(self):
-        try:
-            self.rect = self.parent()
-        except TypeError:
-            self.rect = pygame.Rect(self.parent.rect)
-
     def draw(self, surface):
         self.update_rect_from_parent()
         topleft = self.rect.topleft
@@ -229,7 +226,7 @@ class GridLayout(RelativeLayout, MenuLayout):
     sprites into columns.
     """
     orientation = 'horizontal'  # default, and only implemented
-    expand = True               # will fill all space of parent, if false, will be more compact
+    expand = True  # will fill all space of parent, if false, will be more compact
 
     def __init__(self, **kwargs):
         super(GridLayout, self).__init__(**kwargs)
@@ -292,6 +289,8 @@ class GridLayout(RelativeLayout, MenuLayout):
         width, height = self.rect.size
 
         items_per_column = math.ceil(len(self) / self.columns)
+
+        print(self, width, height, max_height, items_per_column)
 
         if self.expand:
             # fill available space

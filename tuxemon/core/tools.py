@@ -43,7 +43,6 @@ import re
 
 import pygame
 
-import core.components.sprite
 from core import prepare
 from core.components import pyganim
 from core.platform import mixer

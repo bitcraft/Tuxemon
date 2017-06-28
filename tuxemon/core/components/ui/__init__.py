@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 #
 # Tuxemon
@@ -28,6 +27,8 @@
 # core.components.ui User interface handling module.
 #
 #
+from __future__ import absolute_import
+
 import logging
 
 from core import tools

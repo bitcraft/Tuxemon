@@ -94,6 +94,9 @@ class MenuItem(Widget):
         self.enabled = True
         self._in_focus = False
 
+    def __repr__(self):
+        return "<MenuItem: {}>".format(self.label)
+
     def _draw(self, surface):
         """
 

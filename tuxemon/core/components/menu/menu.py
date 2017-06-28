@@ -8,9 +8,8 @@ import pygame
 
 from core import prepare, state, tools
 from core.components.menu.interface import MenuCursor, MenuItem
-from core.components.sprite import RelativeGroup, VisualSpriteList
-from core.components.ui.draw import GraphicBox
-from core.components.ui.text import TextArea
+from core.components.ui.graphicbox import GraphicBox
+from core.components.ui.textarea import TextArea
 
 logger = logging.getLogger(__name__)
 
