@@ -53,17 +53,25 @@ class Menu(Widget):
     columns = 1
     menu_select_sound_filename = "sounds/interface/menu-select.ogg"
     default_character_delay = 0.05
-    animate_contents = False   # show contents while window opens
+    animate_contents = False  # show contents while window opens
     cursor_filename = "gfx/arrow.png"
     cursor_move_duration = .20
-    touch_aware = False        # if true, then menu items can be selected with the mouse/touch
+    touch_aware = False  # if true, then menu items can be selected with the mouse/touch
 
     def __init__(self):
         super(Menu, self).__init__()
 
-        self.selected_index = 0       # track which menu item is selected
+        self.menu_rect = None
+        self.menu_items = GridLayout()
+        self.menu_items.columns = self.columns
+        self.add_widget(self.menu_items)
+
+        # generally just for the cursor arrow
+        self.menu_sprites = RelativeLayout()
+        self.add_widget(self.menu_sprites)
+
+        self.selected_index = 0  # track which menu item is selected
         # holds sprites representing menu items
-        self.create_new_menu_items_group()
         self.arrow = None
 
         self.menu_select_sound = tools.load_sound(self.menu_select_sound_filename)
@@ -83,28 +91,14 @@ class Menu(Widget):
         :param callback: callback to use when selected
         :return: Menu Item
         """
-        # TEMP
+        # WHITE
+        # bg = (192, 192, 192)
+        # fg = (245, 245, 245)
         bg = (192, 192, 192)
-        fg = (245, 245, 245)
+        fg = (0, 0, 0)
         image = shadow_text(self.font, fg, bg, label)
         item = MenuItem(image, label, None, callback)
         self.menu_items.add_widget(item)
-
-    def create_new_menu_items_group(self):
-        """ Create a new group for menu items to be contained in
-
-        Override if you need special placement for the menu items.
-
-        :return: None
-        """
-        # contains the selectable elements of the menu
-        self.menu_items = GridLayout()
-        self.menu_items.columns = self.columns
-        self.add_widget(self.menu_items)
-
-        # generally just for the cursor arrow
-        self.menu_sprites = RelativeLayout()
-        self.add_widget(self.menu_sprites)
 
     # def start_text_animation(self, text_area):
     #     """ Start an animation to show textarea, one character at a time
@@ -277,13 +271,13 @@ class Menu(Widget):
         """
         previous = self.get_selected_item()
         if previous is not None:
-            previous.in_focus = False              # clear the focus flag of old item, if any
-        self.selected_index = index                # update the selection index
-        self.menu_select_sound.play()              # play a sound
-        self.trigger_cursor_update(animate)        # move cursor and [maybe] animate it
-        self.check_bounds()                        # scroll items if off the screen
-        self.get_selected_item().in_focus = True   # set focus flag of new item
-        self.on_menu_selection_change()            # let subclass know menu has changed
+            previous.in_focus = False  # clear the focus flag of old item, if any
+        self.selected_index = index  # update the selection index
+        self.menu_select_sound.play()  # play a sound
+        self.trigger_cursor_update(animate)  # move cursor and [maybe] animate it
+        self.check_bounds()  # scroll items if off the screen
+        self.get_selected_item().in_focus = True  # set focus flag of new item
+        self.on_menu_selection_change()  # let subclass know menu has changed
 
     def check_bounds(self):
         """ Check if the currently selected item is off screen, and animate to show it
@@ -297,18 +291,18 @@ class Menu(Widget):
         # TODO: unify the menu_rect attribute, or move menu to own widget
         menu_rect = self.menu_items.calc_bounding_rect()
 
-        if not hasattr(self, "menu_rect"):
-            return
-
         # get the selected item, if any
         selected = self.get_selected_item()
-        if not selected:
-            return
+        if selected is None:
+            raise RuntimeError
 
         # transform coordinates to screen space
         selected_rect = self.menu_items.calc_absolute_rect(selected.rect)
 
+        # determine if the contents need to be scrolled on the screen
         diff = tools.calc_scroll_thing(selected_rect, menu_rect, self.rect)
+        print(diff)
+
         if diff:
             remove_animations_of(menu_rect, self.animations)
             self.animate(self.menu_rect, duration=.25, relative=True, **diff)
@@ -333,8 +327,8 @@ class Menu(Widget):
         :returns: None or Animation
         """
         selected = self.get_selected_item()
-        if not selected:
-            return
+        if selected is None:
+            raise RuntimeError
 
         x, y = selected.rect.midleft
         x -= tools.scale(2)
@@ -353,9 +347,11 @@ class Menu(Widget):
         :rtype: core.components.menu.interface.MenuItem
         """
         try:
-            return self.menu_items[self.selected_index]
+            item = self.menu_items[self.selected_index]
+            assert item is not None
+            return item
         except IndexError:
-            return None
+            raise RuntimeError("invalid selected index?")
 
     # ============================================================================
     #   The following methods are designed to be monkey patched or overloaded
@@ -385,10 +381,10 @@ class Menu(Widget):
 
         :rtype: pygame.Rect
         """
-        original = self.rect.copy()    # store the original rect
-        self.refresh_layout()          # arrange the menu
-        rect = self.rect.copy()        # store the final rect
-        self.rect = original           # set the original back
+        original = self.rect.copy()  # store the original rect
+        self.refresh_layout()  # arrange the menu
+        rect = self.rect.copy()  # store the final rect
+        self.rect = original  # set the original back
         return rect
 
     def on_menu_selection(self, item):

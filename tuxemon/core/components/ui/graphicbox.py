@@ -81,6 +81,8 @@ class GraphicBox(Widget):
                        for x, y in product(range(0, iw, tw), range(0, ih, th))]
 
     def draw(self, surface):
+        self.update_rect_from_parent()
+
         rect = self.rect
         inner = self.calc_inner_rect(rect)
 

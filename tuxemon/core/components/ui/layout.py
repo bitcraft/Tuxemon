@@ -87,6 +87,8 @@ class MenuLayout(Layout):
         # if there are 0 or 1 enabled items, then ignore movement
         enabled = len([i for i in self.children if i.enabled])
 
+        print(self, enabled, index)
+
         if enabled < 2:
             return 0
 
@@ -95,7 +97,7 @@ class MenuLayout(Layout):
             # in order to accommodate disabled menu items,
             # the mod incrementer will loop until a suitable
             # index is found...one that is not disabled.
-            items = len(self)
+            items = len(self.children)
             mod = 0
 
             # horizontal movement: left and right will inc/dec mod by one
@@ -144,6 +146,7 @@ class MenuLayout(Layout):
 
             original_index = index
             seeking_index = True
+
             # seeking_index once false, will exit the loop
             while seeking_index and mod:
                 index += mod
@@ -306,4 +309,4 @@ class GridLayout(RelativeLayout, MenuLayout):
 
         for index, item in enumerate(self.children):
             oy, ox = divmod(index, self.columns)
-            item.rect.topleft = ox * column_spacing, oy * line_spacing
+            item.rect.topleft = 30 + ox * column_spacing, oy * line_spacing

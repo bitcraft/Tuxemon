@@ -33,8 +33,8 @@ import logging
 from core.components.animation import Animation
 from core.components.animation import Task
 from core.components.animation import remove_animations_of
-from core.rect import Rect
 from core.group import Group
+from core.rect import Rect
 
 # Create a logger for optional handling of debug messages.
 logger = logging.getLogger(__name__)
@@ -60,10 +60,10 @@ class Widget(object):
 
     def __len__(self):
         kinder = list(self.walk())
-        return len(kinder) - 1
+        return len(kinder)
 
     def __nonzero__(self):
-        kinder = len(self) - 1
+        kinder = len(self)
         return bool(kinder)
 
     def __getitem__(self, item):
@@ -108,13 +108,15 @@ class Widget(object):
                 yield walk_child
 
     def walk(self, restrict=False, loopback=False):
-        gen = self._walk(restrict, loopback)
-        next(gen)  # this is always self
+        return iter(self.children)
 
-        for node in gen:
-            if node is self:
-                return
-            yield node
+        # gen = self._walk(restrict, loopback)
+        # next(gen)  # this is always self
+        #
+        # for node in gen:
+        #     if node is self:
+        #         return
+        #     yield node
 
     # def walk(self):
     #     """ Return children (and children of children) in render order
@@ -142,10 +144,10 @@ class Widget(object):
         :rtype: pygame Event
 
         """
-        print(self)
-        print("children: ", list(self.walk()))
-        print("real    : ", self.children)
-        print()
+        # print(self)
+        # print("children: ", list(self.walk()))
+        # print("real    : ", self.children)
+        # print()
 
         for child in self.children:
             if event is None:
@@ -246,7 +248,7 @@ class Widget(object):
         else:
             return kinder[0].rect.unionall([s.rect for s in kinder[1:]])
 
-    def add_widget(self, widget, index=0):
+    def add_widget(self, widget, index=None):
         """ Add a widget to this window as a child
 
         :param widget:
@@ -261,7 +263,11 @@ class Widget(object):
         if self.disabled:
             widget.disabled = True
 
-        self.children.insert(index, widget)
+        if index is None:
+            self.children.append(widget)
+        else:
+            self.children.insert(index, widget)
+
         self._needs_refresh = True
 
     def remove_widget(self, widget):
@@ -288,13 +294,7 @@ class Widget(object):
 
         :return:
         """
-        x = 0
-        y = 0
-        for child in self.walk():
-            if child is not self:
-                child.rect.topleft = child.to_relative(x, y)
-                x += 50
-                y += 30
+        pass
 
     def to_relative(self, x, y):
         """ Transform the coords to relative coordinates

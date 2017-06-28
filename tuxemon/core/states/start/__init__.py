@@ -99,4 +99,5 @@ class StartState(PopUpMenu):
         )
 
         for key, callback in menu_items_map:
+            print(key)
             menu.build_text_item(trans(key).upper(), callback)
