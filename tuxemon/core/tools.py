@@ -59,14 +59,15 @@ _font_cache = dict()
 
 def calc_scroll_thing(rect, group, bounds):
     """ Very poorly named.  See description.
-
+    
     Given a rect, group rect and bounding box, return a dictionary
     that describes the movement along any axis that will cause the
     rect to be contained fully inside the bounds.
-
+    
     :type rect: pygame.Rect
     :type group: pygame.Group
     :type bounds: pygame.Rect
+    
     :rtype: dict
     """
     # check if the selected thing is outside the screen
@@ -97,13 +98,12 @@ def calc_scroll_thing(rect, group, bounds):
 
 def calc_scroll_freedom(rect, parent):
     """ Very poorly named.  See description.
-
+    
     Given a rect and a parent, return any axis that the
     the rect could move, if constrained by the parent rect.
-
     This is used to determine valid movements for scrolling
     regions.
-
+    
     :type rect: pygame.Rect
     :type parent: pygame.Rect
     :rtype: list
@@ -123,11 +123,10 @@ def calc_scroll_freedom(rect, parent):
 
 def calc_quadrant(rect, parent):
     """ Determine which quadrant (n, e, s, w) the rect is in
-
+    
     Uses pygame Rect terms: "top bottom left right"
-
     If return value is empty set, then the rects overlap exactly
-
+    
     :type rect: pygame.Rect
     :type parent: pygame.Rect
     :rtype: set

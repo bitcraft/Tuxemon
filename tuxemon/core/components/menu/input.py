@@ -1,30 +1,5 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
-#
-# Tuxemon
-# Copyright (C) 2014, William Edwards <shadowapex@gmail.com>,
-#                     Benjamin Bean <superman2k5@gmail.com>
-#
-# This file is part of Tuxemon.
-#
-# Tuxemon is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# Tuxemon is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Tuxemon.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Contributor(s):
-#
-# Leif Theden <leif.theden@gmail.com>
-#
-#
+
 from __future__ import division
 from __future__ import print_function
 from __future__ import absolute_import
@@ -32,10 +7,9 @@ from __future__ import absolute_import
 from functools import partial
 
 from core import tools
-from core.components.ui.menu import Menu
+from core.components.menu import Menu
 from core.components.menu.interface import MenuItem
 from core.components.ui.textarea import TextArea
-from core.components.ui.font import shadow_text
 from core.components.game_event import input_event
 
 import pygame
@@ -86,17 +60,15 @@ class InputMenu(Menu):
     def initialize_items(self):
         self.menu_items.columns = self.alphabet_length // 2
 
-        st = partial(shadow_text(self.font))
-
         # add the keys
         for char in self.chars:
-            yield MenuItem(self.font, st(char), None, None, partial(self.add_input_char, char))
+            yield MenuItem(self.shadow_text(char), None, None, partial(self.add_input_char, char))
 
         # backspace key
-        yield MenuItem(st("<="), None, None, self.backspace)
+        yield MenuItem(self.shadow_text("<="), None, None, self.backspace)
 
         # button to confirm the input and close the dialog
-        yield MenuItem(st("END"), None, None, self.confirm)
+        yield MenuItem(self.shadow_text("END"), None, None, self.confirm)
 
     def process_event(self, event):
         super(InputMenu, self).process_event(event)
@@ -123,10 +95,9 @@ class InputMenu(Menu):
     def confirm(self):
         """ Confirm the input
 
-        This is called when user selects "End".
-        An input_event will be emitted with inputted string
+        This is called when user selects "End".  Override, maybe?
 
-        :return: None
+        :return:
         """
         input_event(self.input_string)
         self.game.pop_state(self)

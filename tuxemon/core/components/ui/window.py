@@ -40,7 +40,7 @@ class Window(Widget):
     Windows...:
       * are typically decorated and contain text or a menu
       * may cover the entire screen
-      * do not need decoration
+      * decorate themselves
       * graphical elements in the window are drawn relative to the upper left corner
     """
 

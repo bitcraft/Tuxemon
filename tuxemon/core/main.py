@@ -134,4 +134,3 @@ def headless():
     control.auto_state_discovery()
     control.push_state("HeadlessServerState")
     control.main()
-
