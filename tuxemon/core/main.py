@@ -67,8 +67,8 @@ def main():
     #     control.push_state("FadeInTransition")
 
     # block of code useful for testing
+    logging.basicConfig(level=logging.DEBUG)
     if prepare.CONFIG.collision_map == "1":
-        logging.basicConfig(level=logging.DEBUG)
         logger.info("********* DEBUG OPTIONS ENABLED *********")
 
         import random

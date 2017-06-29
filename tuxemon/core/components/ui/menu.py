@@ -160,7 +160,7 @@ class Menu(Widget):
 
         :return: None
         """
-        logger.debug("reloading items")
+        logger.debug("{} trigger refresh reloading items".format(self))
         self.trigger_refresh()
         items = self.initialize_items()
         if items:
@@ -370,25 +370,6 @@ class Menu(Widget):
         menu_rect = inner.inflate(*cursor_margin)
         menu_rect.bottomright = inner.bottomright
         return menu_rect
-
-    # def calc_final_rect(self):
-    #     """ Calculate the area in the game window where menu is shown
-    #
-    #     This value is the __desired__ location and size, and should not change
-    #     over the lifetime of the menu.  It is used to generate animations
-    #     to open the menu.
-    #
-    #     The rect represents the size of the menu after all items are added.
-    #
-    #     :rtype: pygame.Rect
-    #     """
-    #     original = self.rect.copy()  # store the original rect
-    #     self.trigger_refresh()
-    #     self.check_refresh()  # arrange the menu
-    #     rect = self.rect.copy()  # store the final rect
-    #     self.rect = original  # set the original back
-    #     self.trigger_refresh()
-    #     return rect
 
     def on_menu_selection(self, item):
         """ Hook for things to happen when player selects a menu option

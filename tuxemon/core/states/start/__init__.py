@@ -68,7 +68,7 @@ class BackgroundState(State):
 class StartState(PopUpMenu, State):
     """ The state responsible for the start menu.
     """
-    shrink_to_items = False
+    shrink_to_items = True
 
     def startup(self, *args, **kwargs):
         # super(StartState, self).startup(*args, **kwargs)

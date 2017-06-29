@@ -8,7 +8,6 @@ import pygame
 from core import prepare
 from core.components.locale import translator
 from core.components.menu.interface import MenuItem
-from core.components.menu.menu import Menu
 from core.tools import open_dialog
 from core.components.ui.menu import Menu
 from core.components.locale import translator

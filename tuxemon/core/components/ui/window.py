@@ -91,7 +91,6 @@ class Window(Widget):
 
             # set the helper to draw the background and border
             gb = GraphicBox(border, background, self.background_color)
-            gb.rect = self.rect.copy()
             self.add_widget(gb)
             self.padding = tools.scale(16)
 

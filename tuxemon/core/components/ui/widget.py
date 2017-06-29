@@ -47,10 +47,10 @@ class Widget(object):
     * Widgets can contain other widgets
     * Widgets can define the layout of their children, but not themselves
     """
-    rect = Rect(0, 0, 0, 0)
+    rect = None
 
     def __init__(self):
-        self.rect = self.rect.copy()  # do not remove!
+        # self.rect = self.rect.copy()  # do not remove!
         self.inner_rect = None
         self.parent = None
         self.disabled = False
@@ -201,25 +201,56 @@ class Widget(object):
     def update(self, time_delta):
         self.animations.update(time_delta)
 
+        self.trigger_refresh()
+
         for child in list(self.children):
             child.update(time_delta)
 
     def update_rect_from_parent(self):
-        self.check_refresh()
+        """ Basically, fit this widget's rect to the inner rect of the parent
+        
+        If the rect is not defined, a default will be used.
+        
+        WIP
+        
+        :return: 
+        """
+        logger.debug("{} updating rect".format(self))
 
-        old = self.rect.copy()
+        if self.rect:
+            old = self.rect.copy()
+        else:
+            old = None
 
         if self.parent:
-            self.parent.update_rect_from_parent()
-            self.rect = Rect(self.parent.inner_rect)
+            # self.parent.update_rect_from_parent()
+
+            # TODO: copy values, but not object
+            # cannot copy object b/c animations may be modifying the rect
+            if self.rect is None:
+                self.rect = self.parent.inner_rect.copy()
+            else:
+                inner = self.parent.inner_rect
+                self.rect.x = inner.x
+                self.rect.y = inner.y
+                self.rect.w = inner.w
+                self.rect.h = inner.h
+
             self.inner_rect = self.calc_internal_rect()
+
         else:
-            self.rect = Rect((0, 0), prepare.SCREEN_SIZE)
+            if self.rect is None:
+                self.rect = Rect((0, 0), prepare.SCREEN_SIZE)
+
+            self.rect.topleft = 0, 0
+            self.rect.size = prepare.SCREEN_SIZE
             self.inner_rect = self.calc_internal_rect()
 
         changed = not old == self.rect
 
         if changed:
+            logger.debug("RECT, {} {} {}".format(self, self.rect, self.inner_rect))
+            logger.debug("{} trigger refresh update from parent".format(self))
             self.trigger_refresh()
 
         return changed
@@ -231,6 +262,7 @@ class Widget(object):
         
         :return: None
         """
+        logger.debug("{} TRIGGERED".format(self))
         self._needs_refresh = True
 
     def check_refresh(self):
@@ -243,6 +275,9 @@ class Widget(object):
         :rtype: bool
         """
         if self._needs_refresh and not self._in_refresh:
+
+            if self.rect is None:
+                self.update_rect_from_parent()
 
             # prevent recursion if refresh is checked during refresh
             self._in_refresh = True
@@ -258,6 +293,19 @@ class Widget(object):
             return True
 
         return False
+
+    def refresh_layout(self):
+        """ Force the layout to refresh self and children
+        
+        Do not override.
+        
+        :return: 
+        """
+        logger.debug("{} trigger refresh forced".format(self))
+        self.trigger_refresh()
+        self.check_refresh()
+        for child in self.children:
+            child.refresh_layout()
 
     def _refresh_layout(self):
         """ Override if this widget does anything fancy with it's own rect or childrens'
@@ -316,6 +364,28 @@ class Widget(object):
         else:
             return kinder[0].rect.unionall([s.rect for s in kinder[1:]])
 
+    def calc_final_rect(self):
+        """ Calculate the area in the game window where menu is shown
+
+        This value is the __desired__ location and size, and should not change
+        over the lifetime of the menu.  It is used to generate animations
+        to open the menu.
+
+        The rect represents the size of the menu after all items are added.
+
+        :rtype: pygame.Rect
+        """
+        if self.rect is None:
+            self.update_rect_from_parent()
+
+        original = self.rect.copy()
+        self.refresh_layout()
+        rect = self.rect.copy()
+        self.refresh_layout()
+        self.rect = original
+        print(self, original, rect)
+        return rect
+
     def add_widget(self, widget, index=None):
         """ Add a widget to this window as a child
 
@@ -336,6 +406,7 @@ class Widget(object):
         else:
             self.children.insert(index, widget)
 
+        logger.debug("{} trigger refresh adding_widget".format(self))
         self.trigger_refresh()
 
     def remove_widget(self, widget):
@@ -345,6 +416,7 @@ class Widget(object):
         :return:
         """
         self.children.remove(widget)
+        logger.debug("{} trigger refresh removing_widget".format(self))
         self.trigger_refresh()
         widget.parent = None
 
@@ -377,6 +449,7 @@ class Widget(object):
 
         changed = not old == self.rect
         if changed:
+            logger.debug("{} trigger refresh positioning".format(self))
             self.trigger_refresh()
 
         return changed

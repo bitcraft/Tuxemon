@@ -81,7 +81,7 @@ class GraphicBox(Widget):
                        for x, y in product(range(0, iw, tw), range(0, ih, th))]
 
     def draw(self, surface):
-        self.update_rect_from_parent()
+        # self.update_rect_from_parent()
 
         # most widgets will draw using the parent's inner rect.
         # the graphic box will use the parent's real rect
