@@ -41,8 +41,11 @@ from core.components.ui.widget import Widget
 logger = logging.getLogger(__name__)
 
 
-class State(Widget):
-    """ This is a prototype class for States.
+class State(object):
+    """ This is a mixin class for Widgets.
+    
+    Add this as a super class to a Widget to allow it to operate on
+    the StateStack for game flow control.
 
     All states should inherit from it. No direct instances of this
     class should be created. Update must be overloaded in the child class.

@@ -24,6 +24,8 @@
 # Leif Theden <leif.theden@gmail.com>
 #
 #
+import logging
+
 import pygame
 
 from core import tools
@@ -33,6 +35,8 @@ from core.components.menu.interface import MenuItem
 from core.components.ui.font import shadow_text
 from core.components.ui.layout import GridLayout, RelativeLayout
 from core.components.ui.widget import Widget
+
+logger = logging.getLogger(__name__)
 
 
 class Menu(Widget):
@@ -156,7 +160,8 @@ class Menu(Widget):
 
         :return: None
         """
-        self._needs_refresh = True
+        logger.debug("reloading items")
+        self.trigger_refresh()
         items = self.initialize_items()
         if items:
             self.menu_items.clear_widgets()
@@ -189,7 +194,7 @@ class Menu(Widget):
             if selected is not None:
                 selected.in_focus = False
 
-    def refresh_layout(self):
+    def _refresh_layout(self):
         """ Fit border to contents and hide/show cursor
 
         :return:
@@ -366,22 +371,24 @@ class Menu(Widget):
         menu_rect.bottomright = inner.bottomright
         return menu_rect
 
-    def calc_final_rect(self):
-        """ Calculate the area in the game window where menu is shown
-
-        This value is the __desired__ location and size, and should not change
-        over the lifetime of the menu.  It is used to generate animations
-        to open the menu.
-
-        The rect represents the size of the menu after all items are added.
-
-        :rtype: pygame.Rect
-        """
-        original = self.rect.copy()  # store the original rect
-        self.refresh_layout()  # arrange the menu
-        rect = self.rect.copy()  # store the final rect
-        self.rect = original  # set the original back
-        return rect
+    # def calc_final_rect(self):
+    #     """ Calculate the area in the game window where menu is shown
+    #
+    #     This value is the __desired__ location and size, and should not change
+    #     over the lifetime of the menu.  It is used to generate animations
+    #     to open the menu.
+    #
+    #     The rect represents the size of the menu after all items are added.
+    #
+    #     :rtype: pygame.Rect
+    #     """
+    #     original = self.rect.copy()  # store the original rect
+    #     self.trigger_refresh()
+    #     self.check_refresh()  # arrange the menu
+    #     rect = self.rect.copy()  # store the final rect
+    #     self.rect = original  # set the original back
+    #     self.trigger_refresh()
+    #     return rect
 
     def on_menu_selection(self, item):
         """ Hook for things to happen when player selects a menu option

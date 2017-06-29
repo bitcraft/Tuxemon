@@ -26,6 +26,8 @@
 #
 from __future__ import division
 
+from functools import partial
+
 import pygame as pg
 
 from core import prepare, tools
@@ -60,9 +62,7 @@ class Window(Widget):
     def process_event(self, event):
         """ Process pygame input events
 
-        The menu cursor is handled here, as well as the ESC and ENTER keys.
-
-        This will also toggle the 'in_focus' of the menu item
+        * Check for the ESC key and close the window, if needed.
 
         :type event: pg.Event
         :returns: None
@@ -70,7 +70,8 @@ class Window(Widget):
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_ESCAPE and self.escape_key_exits:
                 self.close()
-                return None
+                # return None so that other states do not get the ESC key
+                return
 
         return super(Window, self).process_event(event)
 
@@ -119,13 +120,6 @@ class Window(Widget):
         # move the bounding box taking account the anchors
         self.position_rect()
 
-    def on_open(self):
-        """ Hook is called after opening animation has finished
-
-        :return:
-        """
-        pass
-
     def resume(self):
         if self.state == "closed":
             def show_items():
@@ -136,7 +130,7 @@ class Window(Widget):
 
             self.state = "opening"
             # self.reload_items()
-            self.refresh_layout()
+            self._refresh_layout()
 
             ani = self.animate_open()
             # if ani:
@@ -152,7 +146,7 @@ class Window(Widget):
 
             # elif self.state == "normal":
             #     self.reload_items()
-            #     self.refresh_layout()
+            #     self._refresh_layout()
             #     self.on_menu_selection_change()
 
     def close(self):
@@ -160,9 +154,16 @@ class Window(Widget):
             self.state = "closing"
             ani = self.animate_close()
             if ani:
-                ani.callback = self.game.pop_state
+                ani.callback = partial(self.game.pop_state, self)
             else:
-                self.game.pop_state()
+                self.game.pop_state(self)
+
+    def on_open(self):
+        """ Hook is called after opening animation has finished
+
+        :return:
+        """
+        pass
 
     def animate_open(self):
         """ Called when menu is going to open

@@ -234,7 +234,7 @@ class CombatTargetMenuState(Menu):
 
                 yield item
 
-    def refresh_layout(self):
+    def _refresh_layout(self):
         """ Before refreshing the layout, determine the optimal target
 
         :return:
@@ -253,7 +253,7 @@ class CombatTargetMenuState(Menu):
                         return
 
         determine_target()
-        super(CombatTargetMenuState, self).refresh_layout()
+        super(CombatTargetMenuState, self)._refresh_layout()
 
     def on_menu_selection_change(self):
         """ Draw borders around sprites when selection changes

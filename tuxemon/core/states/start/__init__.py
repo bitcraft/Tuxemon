@@ -65,7 +65,7 @@ class BackgroundState(State):
         self.game.pop_state()
 
 
-class StartState(PopUpMenu):
+class StartState(PopUpMenu, State):
     """ The state responsible for the start menu.
     """
     shrink_to_items = False
@@ -99,5 +99,4 @@ class StartState(PopUpMenu):
         )
 
         for key, callback in menu_items_map:
-            print(key)
             menu.build_text_item(trans(key).upper(), callback)

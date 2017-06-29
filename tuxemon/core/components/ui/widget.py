@@ -30,6 +30,7 @@ from __future__ import print_function
 
 import logging
 
+from core import prepare
 from core.components.animation import Animation
 from core.components.animation import Task
 from core.components.animation import remove_animations_of
@@ -50,12 +51,14 @@ class Widget(object):
 
     def __init__(self):
         self.rect = self.rect.copy()  # do not remove!
+        self.inner_rect = None
         self.parent = None
         self.disabled = False
         self.children = list()
         self.animations = Group()
         self.padding = 0
         self._needs_refresh = True
+        self._in_refresh = False
         self._anchors = dict()  # used to position the menu/state
 
     def __repr__(self):
@@ -151,8 +154,7 @@ class Widget(object):
         # print("children: ", list(self.walk()))
         # print("real    : ", self.children)
         # print()
-
-        for child in self.children:
+        for child in list(self.children):
             if event is None:
                 break
 
@@ -163,7 +165,7 @@ class Widget(object):
     def animate(self, *targets, **kwargs):
         """ Animate something in this widget
 
-        Animations are processed even while state is inactive
+        Animations are processed even while widget is inactive
 
         :param targets: targets of the Animation
         :type targets: any
@@ -197,23 +199,73 @@ class Widget(object):
         remove_animations_of(target, self.animations)
 
     def update(self, time_delta):
-        for child in self.children:
-            child.update(time_delta)
-
         self.animations.update(time_delta)
 
+        for child in list(self.children):
+            child.update(time_delta)
+
     def update_rect_from_parent(self):
+        self.check_refresh()
+
+        old = self.rect.copy()
+
         if self.parent:
             self.parent.update_rect_from_parent()
             self.rect = Rect(self.parent.inner_rect)
             self.inner_rect = self.calc_internal_rect()
         else:
-            from core import prepare
-
             self.rect = Rect((0, 0), prepare.SCREEN_SIZE)
             self.inner_rect = self.calc_internal_rect()
 
-        print(self, self.rect, self.inner_rect, self.padding)
+        changed = not old == self.rect
+
+        if changed:
+            self.trigger_refresh()
+
+        return changed
+
+    def trigger_refresh(self):
+        """ Call to set a refresh at next opportunity.
+        
+        Best to call this after the widget's position changes.
+        
+        :return: None
+        """
+        print(self, "REFRESH")
+        self._needs_refresh = True
+
+    def check_refresh(self):
+        """ Check if layout is stale, and if so refresh it
+        
+        Best to call this before drawing operations, or before
+        the layout is manipulated in some way
+        
+        :returns: True is the layout was refreshed
+        :rtype: bool
+        """
+        if self._needs_refresh and not self._in_refresh:
+
+            # prevent recursion if refresh is checked during refresh
+            self._in_refresh = True
+            self._needs_refresh = False
+
+            self._refresh_layout()
+
+            for child in self.children:
+                child.trigger_refresh()
+
+            self._in_refresh = False
+
+            return True
+
+        return False
+
+    def _refresh_layout(self):
+        """ Override if this widget does anything fancy with it's own rect or childrens'
+
+        :return: None
+        """
+        pass
 
     def draw(self, surface):
         """ Cause this and all children to draw themselves to the surface
@@ -226,16 +278,11 @@ class Widget(object):
         :rtype: None
         :returns: None
         """
-        if self._needs_refresh:
-            self.refresh_layout()
-            self._needs_refresh = False
-            for child in self.children:
-                child._needs_refresh = True
+        self.check_refresh()
+        self._draw(surface)
 
         for child in self.children:
             child.draw(surface)
-
-        self._draw(surface)
 
     def _draw(self, surface):
         """ Draw only this widget to the surface
@@ -252,14 +299,15 @@ class Widget(object):
         :returns: Rect representing space inside borders, if any
         :rtype: pygame.Rect
         """
-        inner = self.rect.inflate(-self.padding, -self.padding)
-        return inner
+        self.check_refresh()
+        return self.rect.inflate(-self.padding, -self.padding)
 
     def calc_bounding_rect(self):
         """ Return a rect that contains this and all children
 
         :rtype: pg.Rect
         """
+        self.check_refresh()
         kinder = list(self.children)
 
         if not kinder:
@@ -289,7 +337,7 @@ class Widget(object):
         else:
             self.children.insert(index, widget)
 
-        self._needs_refresh = True
+        self.trigger_refresh()
 
     def remove_widget(self, widget):
         """ Remove widget from this one
@@ -298,7 +346,7 @@ class Widget(object):
         :return:
         """
         self.children.remove(widget)
-        self._needs_refresh = True
+        self.trigger_refresh()
         widget.parent = None
 
     def clear_widgets(self):
@@ -308,14 +356,6 @@ class Widget(object):
         """
         for widget in list(self.children):
             self.remove_widget(widget)
-        self._needs_refresh = True
-
-    def refresh_layout(self):
-        """ IDK
-
-        :return:
-        """
-        pass
 
     def to_relative(self, x, y):
         """ Transform the coords to relative coordinates
@@ -327,9 +367,20 @@ class Widget(object):
 
     def position_rect(self):
         """ Reposition rect taking in account the anchors
+        
+        :return: True if the rect was changed
+        :rtype: bool
         """
+        old = self.rect.copy()
+
         for attribute, value in self._anchors.items():
             setattr(self.rect, attribute, value)
+
+        changed = not old == self.rect
+        if changed:
+            self.trigger_refresh()
+
+        return changed
 
     def anchor(self, attribute, value):
         """ Set an anchor for the menu window

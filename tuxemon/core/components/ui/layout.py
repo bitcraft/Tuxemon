@@ -36,7 +36,7 @@ from core.tools import scale
 
 class Layout(Widget):
     """
-    Layouts contain widgets and position them.
+    Layouts contain widgets and position them. ]
     """
 
     def __repr__(self):
@@ -226,15 +226,13 @@ class RelativeLayout(Layout):
 
 class GridLayout(RelativeLayout, MenuLayout):
     """
-    Sprite group which can be configured to arrange the children
-    sprites into columns.
+    Can be configured to arrange the children widgets into a grid
     """
     orientation = 'horizontal'  # default, and only implemented
     expand = True  # will fill all space of parent, if false, will be more compact
 
     def __init__(self, **kwargs):
         super(GridLayout, self).__init__(**kwargs)
-        self._needs_arrange = False
         self._columns = 1
         self.line_spacing = None
 
@@ -247,34 +245,7 @@ class GridLayout(RelativeLayout, MenuLayout):
         self._columns = value
         self._needs_arrange = True
 
-    def calc_bounding_rect(self):
-        if self._needs_arrange:
-            self._arrange_menu_items()
-            self._needs_arrange = False
-        return super(GridLayout, self).calc_bounding_rect()
-
-    def add_widget(self, item, **kwargs):
-        """ Add something to the grid
-
-        do not add iterables to this function.  use 'extend'
-
-        :param item: stuff to add
-        :returns: None
-        """
-        super(GridLayout, self).add_widget(item, **kwargs)
-        self._needs_arrange = True
-
-    def remove(self, *items):
-        super(GridLayout, self).remove(*items)
-        self._needs_arrange = True
-
-    def draw(self, surface):
-        if self._needs_arrange:
-            self._arrange_menu_items()
-            self._needs_arrange = False
-        super(GridLayout, self).draw(surface)
-
-    def _arrange_menu_items(self):
+    def _refresh_layout(self):
         """ Iterate through menu items and position them in the menu
         Defaults to a multi-column layout with items placed horizontally first.
 
