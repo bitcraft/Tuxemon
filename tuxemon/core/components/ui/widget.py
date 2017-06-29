@@ -231,7 +231,6 @@ class Widget(object):
         
         :return: None
         """
-        print(self, "REFRESH")
         self._needs_refresh = True
 
     def check_refresh(self):

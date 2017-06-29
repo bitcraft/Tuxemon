@@ -24,11 +24,14 @@
 # Leif Theden <leif.theden@gmail.com>
 #
 #
+import logging
 import math
 
 import pygame as pg
 
 from core import tools
+
+logger = logging.getLogger(__name__)
 
 
 def bubble_text(font, fg, bg, text):
@@ -148,7 +151,7 @@ def constrain_width(text, font, width):
             token_width = font.size(test)[0]
             if token_width >= width:
                 if scrap is None:
-                    print('message is too large for width', text)
+                    logger.error('message is too large for width', text)
                     raise RuntimeError
                 yield scrap
                 scrap = word

@@ -88,8 +88,6 @@ class MenuLayout(Layout):
         # if there are 0 or 1 enabled items, then ignore movement
         enabled = len([i for i in self.children if i.enabled])
 
-        print(self, enabled, index)
-
         if enabled < 2:
             return 0
 
