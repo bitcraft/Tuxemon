@@ -193,8 +193,12 @@ class RelativeLayout(Layout):
 
     def draw(self, surface):
         self.update_rect_from_parent()
-        print(self, self.parent, self.rect, self.parent.inner_rect)
+
+        self.rect = self.parent.rect
+
         topleft = self.rect.topleft
+
+        print(topleft)
 
         spritedict = self.spritedict
         surface_blit = surface.blit

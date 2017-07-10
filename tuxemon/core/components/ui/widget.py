@@ -223,9 +223,9 @@ class Widget(object):
             old = None
 
         if self.parent:
+            print(self, self.parent, self.rect, self.parent.inner_rect)
             # self.parent.update_rect_from_parent()
-
-            # TODO: copy values, but not object
+            # set our rect to the rect of the parent
             # cannot copy object b/c animations may be modifying the rect
             if self.rect is None:
                 self.rect = self.parent.inner_rect.copy()
@@ -236,21 +236,19 @@ class Widget(object):
                 self.rect.w = inner.w
                 self.rect.h = inner.h
 
-            self.inner_rect = self.calc_internal_rect()
-
         else:
+            print(self, self.parent, self.rect, self.inner_rect)
             if self.rect is None:
                 self.rect = Rect((0, 0), prepare.SCREEN_SIZE)
-
-            self.rect.topleft = 0, 0
-            self.rect.size = prepare.SCREEN_SIZE
-            self.inner_rect = self.calc_internal_rect()
+                # self.rect.topleft = 0, 0
+                # self.rect.size = prepare.SCREEN_SIZE
 
         changed = not old == self.rect
 
         if changed:
             logger.debug("RECT, {} {} {}".format(self, self.rect, self.inner_rect))
             logger.debug("{} trigger refresh update from parent".format(self))
+            self.inner_rect = self._calc_internal_rect()
             self.trigger_refresh()
 
         return changed
@@ -281,13 +279,15 @@ class Widget(object):
 
             # prevent recursion if refresh is checked during refresh
             self._in_refresh = True
-            self._needs_refresh = False
 
             self._refresh_layout()
+            self.inner_rect = self._calc_internal_rect()
+            print("CHECK {} {} {}".format(self, self.rect, self.inner_rect))
 
             for child in self.children:
                 child.trigger_refresh()
 
+            self._needs_refresh = False
             self._in_refresh = False
 
             return True
@@ -347,6 +347,9 @@ class Widget(object):
         :rtype: pygame.Rect
         """
         self.check_refresh()
+        return self._calc_internal_rect()
+
+    def _calc_internal_rect(self):
         return self.rect.inflate(-self.padding, -self.padding)
 
     def calc_bounding_rect(self):
