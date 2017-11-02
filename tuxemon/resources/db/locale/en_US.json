@@ -67,7 +67,14 @@
     "menu_player": "Player",
     "menu_run": "Run",
     "menu_save": "Save",
-    
+    "menu_debug": "Debug",
+
+    "debug_change_map": "Change Map",
+    "debug_reload_map": "Reload Map",
+    "debug_save_state": "Save State",
+    "debug_load_state": "Load State",
+    "debug_show_state": "Show State",
+
     "multiplayer_accept": "Accept",
     "multiplayer_decline": "Decline",
     "multiplayer_duel": "${{name}} would like to Duel!",

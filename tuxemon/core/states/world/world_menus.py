@@ -53,7 +53,7 @@ class WorldMenuState(Menu):
             open_dialog(self.game, [translator.translate('not_implemented')])
 
         # Main Menu - Allows users to open the main menu in game.
-        menu_items_map = (
+        menu_items_map = [
             ('menu_journal', not_implemented_dialog),
             ('menu_monster', self.open_monster_menu),
             ('menu_bag', change_state("ItemMenuState")),
@@ -61,9 +61,17 @@ class WorldMenuState(Menu):
             ('menu_save', change_state("SaveMenuState")),
             ('menu_load', change_state("LoadMenuState")),
             ('menu_options', not_implemented_dialog),
-            ('exit', exit_game)
-        )
+        ]
+
+        if 1:
+            menu_items_map.append(('menu_debug', self.open_debug_menu))
+
+        menu_items_map.append(('exit', exit_game))
+
         add_menu_items(self, menu_items_map)
+
+    def open_debug_menu(self):
+        self.game.replace_state('DebugMenuState')
 
     def open_monster_menu(self):
         from core.states.monster import MonsterMenuState
