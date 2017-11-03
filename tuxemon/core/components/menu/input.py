@@ -76,10 +76,14 @@ class InputMenu(Menu):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_BACKSPACE:
                 self.backspace()
+                return
 
             char = event.unicode
             if char in self.chars:
                 self.add_input_char(char)
+                return
+
+        return event
 
     def backspace(self):
         self.input_string = self.input_string[:-1]

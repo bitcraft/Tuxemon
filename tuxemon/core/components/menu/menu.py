@@ -411,11 +411,13 @@ class Menu(state.State):
                 if event.key == pygame.K_RETURN:
                     self.menu_select_sound.play()
                     self.on_menu_selection(self.get_selected_item())
+                    return
 
                 else:
                     index = self.menu_items.determine_cursor_movement(self.selected_index, event)
                     if not self.selected_index == index:
                         self.change_selection(index)
+                    return
 
         # TODO: handling of click/drag, miss-click, etc
         # TODO: eventually, maybe move some handling into menuitems
@@ -445,6 +447,9 @@ class Menu(state.State):
                 if item.rect.collidepoint(mouse_pos):
                     self.change_selection(index)
                     self.on_menu_selection(self.get_selected_item())
+                    return
+
+        return 
 
     def change_selection(self, index, animate=True):
         """ Force the menu to be evaluated and move cursor and trigger focus changes

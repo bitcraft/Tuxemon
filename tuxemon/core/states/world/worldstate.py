@@ -251,8 +251,8 @@ class WorldState(state.State):
 
         """
         super(WorldState, self).update(time_delta)
-        logger.debug("*** Game Loop Started ***")
-        logger.debug("Player Variables:" + str(self.player1.game_variables))
+        # logger.debug("*** Game Loop Started ***")
+        # logger.debug("Player Variables:" + str(self.player1.game_variables))
 
     def draw(self, surface):
         """ Draw the game world to the screen
@@ -341,6 +341,8 @@ class WorldState(state.State):
         # interlace player sprites with tiles surfaces.
         # eventually, maybe use pygame sprites or something similar
         world_surfaces = list()
+
+        return
 
         # get player coords to center map
         cx, cy = nearest(self.project(self.player1.tile_pos))
@@ -644,12 +646,12 @@ class WorldState(state.State):
 
         # Handle tile based movement for the player
         # TODO: move to some generic "InputManager' type class
-        if self.shift_held:
-            self.player1.running = True
-            self.player1.walking = False
-        else:
-            self.player1.running = False
-            self.player1.walking = True
+        # if self.shift_held:
+        #     self.player1.running = True
+        #     self.player1.walking = False
+        # else:
+        #     self.player1.running = False
+        #     self.player1.walking = True
 
     def lock_controls(self):
         """ Prevent input from moving the player
