@@ -66,7 +66,7 @@ class DebugMenuState(Menu):
         # area where the input will be shown
         self.text_area = TextArea(self.font, self.font_color, (96, 96, 96))
         self.text_area.animated = False
-        self.text_area.rect = pygame.Rect(tools.scale_sequence([90, 30, 80, 100]))
+        self.text_area.rect = pygame.Rect(tools.scale_sequence([90, 25, 80, 100]))
         self.sprites.add(self.text_area)
 
         self.filenames = VisualSpriteList(parent=self.calc_filenames_rect)
@@ -83,6 +83,9 @@ class DebugMenuState(Menu):
             if event.key == pygame.K_BACKSPACE:
                 self.backspace()
                 return
+
+            if event.key == pygame.K_DOWN:
+                pass
 
             char = event.unicode.upper()
             if char in self.chars:
@@ -132,10 +135,11 @@ class DebugMenuState(Menu):
         return rect
 
     def calc_filenames_rect(self):
-        w = self.rect.width - self.rect.width * .8
-        h = self.rect.height * .6
-        rect = self.rect.inflate(-w, -h)
-        rect.top = self.rect.top + (h * .4)
+        w = self.rect.width * .8
+        h = self.rect.height * .7
+        y = self.rect.top + (h * .35)
+        x = self.rect.left + (w * .1)
+        rect = pygame.Rect(x, y, w, h)
         return rect
 
     def change_map(self):
