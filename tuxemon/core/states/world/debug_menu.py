@@ -35,10 +35,9 @@ class DebugMenuState(Menu):
     """
     Menu for the world state
     """
-    # shrink_to_items = True  # this menu will shrink, but size is adjusted when opened
+    chars = u"ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
     animate_contents = True
-    chars = u"ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890.-!"
-    alphabet_length = 26
+    empty_box = "< map name >"
 
     def startup(self, *args, **kwargs):
         super(DebugMenuState, self).startup(*args, **kwargs)
@@ -66,11 +65,13 @@ class DebugMenuState(Menu):
         # area where the input will be shown
         self.text_area = TextArea(self.font, self.font_color, (96, 96, 96))
         self.text_area.animated = False
-        self.text_area.rect = pygame.Rect(tools.scale_sequence([90, 25, 80, 100]))
+        self.text_area.rect = tools.scaled_rect(20, 23, 80, 100)
+        self.text_area.text = self.empty_box
         self.sprites.add(self.text_area)
 
         self.filenames = VisualSpriteList(parent=self.calc_filenames_rect)
         self.filenames.columns = 1
+        self.filenames.line_spacing = tools.scale(7)
 
         # add_menu_items(self, menu_items_map)
         self.change_map()
@@ -89,7 +90,11 @@ class DebugMenuState(Menu):
 
             char = event.unicode.upper()
             if char in self.chars:
-                self.add_input_char(char)
+                for index, item in enumerate(self.menu_items):
+                    if char == item.label:
+                        self.change_selection(index)
+                        self.add_input_char(char)
+                        return
                 return
 
     def backspace(self):
@@ -102,64 +107,55 @@ class DebugMenuState(Menu):
 
     def draw(self, surface):
         super(DebugMenuState, self).draw(surface)
-
         self.filenames.draw(surface)
+        # surface.fill((10, 0, 0), self.filenames.rect)
+
+    def scan_maps(self):
+        """ Scan the resources folder for maps to open
+
+        :return:
+        """
+        folder = transform_resource_filename('maps')
+        return sorted(glob.glob(join(folder, '*.tmx')))
 
     def update_text_area(self):
-        self.text_area.text = self.input_string
-        print(self.input_string)
-        folder = transform_resource_filename('maps')
-        change_map = self.game.get_state_name('WorldState').change_map
-        paths = sorted(glob.glob(join(folder, '*.tmx')))
+        if self.input_string == '':
+            self.text_area.text = self.empty_box
+        else:
+            self.text_area.text = self.input_string
+        self.update_filename_list()
 
+    def update_filename_list(self):
         self.filenames.empty()
-
-        for path in paths:
-            if self.input_string == '':
-                map_name = basename(path)[:-4]
+        change_map = self.game.get_state_name('WorldState').change_map
+        for path in self.scan_maps():
+            # if input is empty, add all the maps
+            # otherwise, filter by the input string
+            map_name = basename(path)[:-4]
+            if self.input_string == '' or self.input_string in map_name.upper():
                 image = self.shadow_text(map_name)
-                item = MenuItem(image, path, None, None)
-                self.filenames.add(item)
-
-            elif self.input_string in path.upper():
-                map_name = basename(path)[:-4]
-                image = self.shadow_text(map_name)
-                item = MenuItem(image, path, None, None)
+                item = MenuItem(image, path, None, partial(change_map, path))
                 self.filenames.add(item)
 
     def calc_internal_rect(self):
-        w = self.rect.width - self.rect.width * .9
-        h = 10
-        rect = self.rect.inflate(-w, -h)
-        rect.top = self.rect.centery * .1
-        return rect
+        """ Character input area
+
+        :return:
+        """
+        return tools.scaled_rect(7, 40, 100, 100)
 
     def calc_filenames_rect(self):
-        w = self.rect.width * .8
-        h = self.rect.height * .7
-        y = self.rect.top + (h * .35)
-        x = self.rect.left + (w * .1)
-        rect = pygame.Rect(x, y, w, h)
-        return rect
+        """ Filenames area
+
+        :return:
+        """
+        return tools.scaled_rect(115, 8, 150, 130)
 
     def change_map(self):
-        self.menu_items.columns = len(self.chars)
-        # get maps available
-        folder = transform_resource_filename('maps')
-        change_map = self.game.get_state_name('WorldState').change_map
-        paths = sorted(glob.glob(join(folder, '*.tmx')))
-
+        self.menu_items.columns = len(self.chars) // 6
         self.menu_items.empty()
-
-        # add the keys
         for char in self.chars:
-            print(char)
-            self.build_item(char, lambda x: x)
-
-        pass
-        # for path in paths:
-        #     map_name = basename(path)[:-4]
-        #     self.build_item(basename(map_name), partial(change_map, path))
+            self.build_item(char, partial(self.add_input_char, char))
 
     def reload_map(self):
         pass

@@ -255,6 +255,19 @@ def scale_tile(surface, tile_size):
     return surface
 
 
+def scaled_rect(x, y, w, h):
+    """ Using the internal native resolution, return rect scaled to the screen
+
+    :type x: int
+    :type y: int
+    :type w: int
+    :type h: int
+
+    :rtype: pygame.Rect
+    """
+    return pygame.Rect(*scale_sequence((x, y, w, h)))
+
+
 def scale_sprite(sprite, ratio):
     """ Scale a sprite's image in place
 

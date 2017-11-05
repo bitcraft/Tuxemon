@@ -432,10 +432,14 @@ class VisualSpriteList(RelativeGroup):
         column_spacing = width // self.columns
 
         # TODO: pagination API
+        contains = self.rect.contains
 
         for index, item in enumerate(self.sprites()):
             oy, ox = divmod(index, self.columns)
             item.rect.topleft = ox * column_spacing, oy * line_spacing
+
+            # hide items out of the bounds of the rect
+            item.visible = contains(item.rect.move(self.rect.topleft))
 
     def determine_cursor_movement(self, *args):
         """ Given an event, determine a new selected item offset

@@ -2,7 +2,6 @@ from __future__ import division, print_function
 
 import logging
 import math
-import time
 from functools import partial
 
 import pygame
@@ -58,7 +57,7 @@ class Menu(state.State):
     animate_contents = False   # show contents while window opens
     touch_aware = False        # if true, then menu items can be selected with the mouse/touch
     key_repeat_delay = .6     # amount of ms until key repeats if held
-    key_repeat_speed = .1     # interval that key repeats if held
+    key_repeat_speed = .03     # interval that key repeats if held
 
     def startup(self, *items, **kwargs):
         self.rect = self.rect.copy()  # do not remove!
@@ -68,9 +67,9 @@ class Menu(state.State):
         self._show_contents = False   # draw menu items, or not
         self._needs_refresh = False   # refresh layout on next draw
         self._anchors = dict()        # used to position the menu/state
-        self._key_repeat = None         # what key has been pressed
-        self._key_repeat_state = 0    # 0: waiting, 1: delay, 2: repeating
-        self._key_repeat_time = 0       # when key press was started
+        self._key_repeat = None       # what key has been pressed
+        self._key_repeat_state = 0    # 0: wait/delay, 1: repeating
+        self._key_repeat_time = 0     # when key press was started
         self.__dict__.update(kwargs)  # may be removed in the future
 
         # holds sprites representing menu items
@@ -328,12 +327,18 @@ class Menu(state.State):
 
         if self._key_repeat:
             self._key_repeat_time += time_delta
-            print (self._key_repeat_time)
 
-            if self._key_repeat_time >= self.key_repeat_delay:
-                event = pygame.event.Event(pygame.KEYDOWN, {'key': self._key_repeat, 'unicode': ''})
-                self.process_event(event)
-                self._key_repeat_time = 0
+            if self._key_repeat_state == 0:
+                if self._key_repeat_time >= self.key_repeat_delay:
+                    event = pygame.event.Event(pygame.KEYDOWN, {'key': self._key_repeat, 'unicode': ''})
+                    self.process_event(event)
+                    self._key_repeat_state = 1
+
+            elif self._key_repeat_state == 1:
+                if self._key_repeat_time >= self.key_repeat_speed:
+                    event = pygame.event.Event(pygame.KEYDOWN, {'key': self._key_repeat, 'unicode': ''})
+                    self.process_event(event)
+                    self._key_repeat_state = 1
 
     def draw(self, surface):
         """ Draws the menu object to a pygame surface.
@@ -436,12 +441,14 @@ class Menu(state.State):
                     if not self.selected_index == index:
                         self.change_selection(index)
                         self._key_repeat = event.key
+                        self._key_repeat_state = 0
                         self._key_repeat_time = 0
                     return
 
         elif event.type == pygame.KEYUP:
             if self._key_repeat == event.key:
                 self._key_repeat = None
+                self._key_repeat_state = 0
                 self._key_repeat_time = 0
                 return
 
