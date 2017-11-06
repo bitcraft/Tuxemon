@@ -43,41 +43,41 @@ class Menu(state.State):
     columns = 1
     min_font_size = 4
     draw_borders = True
-    background = None                 # Image used to draw the background
+    background = None  # Image used to draw the background
     background_color = 248, 248, 248  # The window's background color
-    background_filename = None        # File to load for image background
+    background_filename = None  # File to load for image background
     menu_select_sound_filename = "sounds/interface/menu-select.ogg"
     font_filename = prepare.DATADIR + "/font/PressStart2P.ttf"
     borders_filename = "gfx/dialog-borders01.png"
     cursor_filename = "gfx/arrow.png"
     cursor_move_duration = .20
     default_character_delay = 0.05
-    shrink_to_items = False    # fit the border to contents
-    escape_key_exits = True    # escape key closes menu
-    animate_contents = False   # show contents while window opens
-    touch_aware = False        # if true, then menu items can be selected with the mouse/touch
-    key_repeat_delay = .6     # amount of ms until key repeats if held
-    key_repeat_speed = .03     # interval that key repeats if held
+    shrink_to_items = False  # fit the border to contents
+    escape_key_exits = True  # escape key closes menu
+    animate_contents = False  # show contents while window opens
+    touch_aware = False  # if true, then menu items can be selected with the mouse/touch
+    key_repeat_delay = .6  # amount of ms until key repeats if held
+    key_repeat_speed = .03  # interval that key repeats if held
 
     def startup(self, *items, **kwargs):
         self.rect = self.rect.copy()  # do not remove!
-        self.selected_index = 0       # track which menu item is selected
-        self.state = "closed"         # closed, opening, normal, disabled, closing
-        self.window = None            # draws borders, background
-        self._show_contents = False   # draw menu items, or not
-        self._needs_refresh = False   # refresh layout on next draw
-        self._anchors = dict()        # used to position the menu/state
-        self._key_repeat = None       # what key has been pressed
-        self._key_repeat_state = 0    # 0: wait/delay, 1: repeating
-        self._key_repeat_time = 0     # when key press was started
+        self.selected_index = 0  # track which menu item is selected
+        self.state = "closed"  # closed, opening, normal, disabled, closing
+        self.window = None  # draws borders, background
+        self._show_contents = False  # draw menu items, or not
+        self._needs_refresh = False  # refresh layout on next draw
+        self._anchors = dict()  # used to position the menu/state
+        self._key_repeat = None  # what key has been pressed
+        self._key_repeat_state = 0  # 0: wait/delay, 1: repeating
+        self._key_repeat_time = 0  # when key press was started
         self.__dict__.update(kwargs)  # may be removed in the future
 
         # holds sprites representing menu items
         self.create_new_menu_items_group()
 
-        self.set_font()          # load default font
-        self.load_graphics()     # load default graphics
-        self.reload_sounds()     # load default sounds
+        self.set_font()  # load default font
+        self.load_graphics()  # load default graphics
+        self.reload_sounds()  # load default sounds
 
     def create_new_menu_items_group(self):
         """ Create a new group for menu items to be contained in
@@ -363,9 +363,6 @@ class Menu(state.State):
 
         self.sprites.draw(surface)
 
-        # debug = show the menu items area
-        # surface.fill((255, 0, 0), self.calc_internal_rect(), 2)
-
     def set_font(self, size=5, font=None, color=(10, 10, 10), line_spacing=10):
         """Set the font properties that the menu uses including font _color, size, typeface,
         and line spacing.
@@ -482,7 +479,7 @@ class Menu(state.State):
                     self.on_menu_selection(self.get_selected_item())
                     return
 
-        return 
+        return
 
     def change_selection(self, index, animate=True):
         """ Force the menu to be evaluated and move cursor and trigger focus changes
@@ -491,12 +488,12 @@ class Menu(state.State):
         """
         previous = self.get_selected_item()
         if previous is not None:
-            previous.in_focus = False              # clear the focus flag of old item, if any
-        self.selected_index = index                # update the selection index
-        self.menu_select_sound.play()              # play a sound
-        self.trigger_cursor_update(animate)        # move cursor and [maybe] animate it
-        self.get_selected_item().in_focus = True   # set focus flag of new item
-        self.on_menu_selection_change()            # let subclass know menu has changed
+            previous.in_focus = False  # clear the focus flag of old item, if any
+        self.selected_index = index  # update the selection index
+        self.menu_select_sound.play()  # play a sound
+        self.trigger_cursor_update(animate)  # move cursor and [maybe] animate it
+        self.get_selected_item().in_focus = True  # set focus flag of new item
+        self.on_menu_selection_change()  # let subclass know menu has changed
 
     def search_items(self, game_object):
         """ Non-optimised search through menu_items for a particular thing
@@ -637,10 +634,10 @@ class Menu(state.State):
 
         :rtype: pygame.Rect
         """
-        original = self.rect.copy()    # store the original rect
-        self.refresh_layout()          # arrange the menu
-        rect = self.rect.copy()        # store the final rect
-        self.rect = original           # set the original back
+        original = self.rect.copy()  # store the original rect
+        self.refresh_layout()  # arrange the menu
+        rect = self.rect.copy()  # store the final rect
+        self.rect = original  # set the original back
         return rect
 
     def on_open(self):
@@ -726,7 +723,7 @@ class PopUpMenu(Menu):
         rect = self.calc_final_rect()
 
         # set rect to a small size for the initial values of the animation
-        self.rect = self.rect.copy()           # required.  do not remove.
+        self.rect = self.rect.copy()  # required.  do not remove.
         self.rect.height = int(rect.height * .1)
         self.rect.width = int(rect.width * .1)
         self.rect.center = rect.center
