@@ -107,9 +107,6 @@ class DebugMenuState(Menu):
                 self.backspace()
                 return
 
-            if event.key == pygame.K_DOWN:
-                pass
-
             char = event.unicode.upper()
             if char in self.chars:
                 for index, item in enumerate(self.menu_items):
