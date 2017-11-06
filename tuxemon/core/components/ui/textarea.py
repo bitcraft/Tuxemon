@@ -30,10 +30,10 @@ from __future__ import division
 import pygame
 
 import core.components.ui.font
-from core.components.sprite import Sprite
+from core.components.ui.widget import Widget
 
 
-class TextArea(Sprite):
+class TextArea(Widget):
     """ Area of the screen that can draw text
     """
     animated = True

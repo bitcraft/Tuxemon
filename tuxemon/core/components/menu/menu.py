@@ -1,4 +1,5 @@
-from __future__ import division, print_function
+from __future__ import division
+from __future__ import print_function
 
 import logging
 import math
@@ -6,11 +7,12 @@ from functools import partial
 
 import pygame
 
-from core import prepare, state, tools
+from core import prepare, tools
 from core.components.menu.interface import MenuCursor, MenuItem
 from core.components.sprite import RelativeGroup, VisualSpriteList
-from core.components.ui.draw import GraphicBox
-from core.components.ui.text import TextArea
+from core.components.ui.graphicbox import GraphicBox
+from core.components.ui.textarea import TextArea
+from core.components.ui.widget import Widget
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +27,7 @@ def layout(scale):
 layout = layout(prepare.SCALE)
 
 
-class Menu(state.State):
+class Menu2(Widget):
     """ A class to create menu objects.
 
     Menus are a type of game state.  Menus that are the top state
@@ -59,8 +61,9 @@ class Menu(state.State):
     key_repeat_delay = .6  # amount of ms until key repeats if held
     key_repeat_speed = .03  # interval that key repeats if held
 
-    def startup(self, *items, **kwargs):
-        self.rect = self.rect.copy()  # do not remove!
+    def __init__(self, *items, **kwargs):
+        super(Menu, self).__init__()
+        # self.rect = self.rect.copy()  # do not remove!
         self.selected_index = 0  # track which menu item is selected
         self.state = "closed"  # closed, opening, normal, disabled, closing
         self.window = None  # draws borders, background
@@ -360,8 +363,6 @@ class Menu(state.State):
         if self._show_contents:
             self.menu_items.draw(surface)
             self.menu_sprites.draw(surface)
-
-        self.sprites.draw(surface)
 
     def set_font(self, size=5, font=None, color=(10, 10, 10), line_spacing=10):
         """Set the font properties that the menu uses including font _color, size, typeface,

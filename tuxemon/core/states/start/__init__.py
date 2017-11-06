@@ -38,6 +38,7 @@ from functools import partial
 from core import prepare
 from core.components.locale import translator
 from core.components.ui.menu import Menu
+from core.components.ui.widget import Widget
 from core.components.ui.popup import PopUpMenu
 from core.state import State
 
@@ -47,7 +48,7 @@ trans = translator.translate
 logger = logging.getLogger(__name__)
 
 
-class BackgroundState(State):
+class BackgroundState(State, Widget):
     """ background state is used to prevent other states from
     being required to track dirty screen areas.  for example,
     in the start state, there is a menu on a blank background,

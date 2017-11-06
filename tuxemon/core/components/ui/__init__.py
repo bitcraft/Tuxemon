@@ -30,6 +30,27 @@
 from __future__ import absolute_import
 
 
+def build_text_item(label, callback, icon=None):
+    """ Create a menu item and add it to the menu
+
+    :param label: Some text
+    :param icon: pygame surface (not used yet)
+    :param callback: callback to use when selected
+    :return: Menu Item
+    """
+    from core import tools
+    from .menu import MenuItem
+    from .draw import shadow_text
+    # WHITE
+    # bg = (192, 192, 192)
+    # fg = (245, 245, 245)
+    bg = (192, 192, 192)
+    fg = (0, 0, 0)
+    font = tools.load_default_font()
+    image = shadow_text(font, fg, bg, label)
+    return MenuItem(image, label, None, callback)
+
+
 def draw_text(surface, text=None, rect=None, justify="left", align=None,
               font=None, font_size=None, font_color=None):
     """Draws text to a surface. If the text exceeds the rect size, it will
@@ -127,7 +148,7 @@ def draw_text(surface, text=None, rect=None, justify="left", align=None,
     if justify == "center":
         if lines:
             left = (left + (width / 2)) - \
-                    ((len(lines[0]) * pixels_per_letter) / 2)
+                   ((len(lines[0]) * pixels_per_letter) / 2)
         else:
             left = 0
 
@@ -137,7 +158,7 @@ def draw_text(surface, text=None, rect=None, justify="left", align=None,
     # If text alignment was set, handle the position of the text automatically
     if align == "middle":
         top = (top + (height / 2)) - \
-                ((text_surface.get_height() * len(lines)) / 2)
+              ((text_surface.get_height() * len(lines)) / 2)
 
     elif align == "bottom":
         raise NotImplementedError("Needs to be implemented")
@@ -148,4 +169,4 @@ def draw_text(surface, text=None, rect=None, justify="left", align=None,
         line = font.render(item, 1, font_color)
 
         surface.blit(line, (left, top + spacing))
-        spacing += line.get_height() # + self.line_spacing
+        spacing += line.get_height()  # + self.line_spacing

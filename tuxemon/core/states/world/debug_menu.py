@@ -36,10 +36,13 @@ import pygame
 
 from core import tools
 from core.components.locale import translator
-from core.components.menu import Menu
 from core.components.menu.interface import MenuItem
-from core.components.sprite import VisualSpriteList
-from core.components.ui.text import TextArea
+from core.components.ui import build_text_item
+from core.components.ui.graphicbox import GraphicBox
+from core.components.ui.layout import Layout, MenuLayout
+from core.components.ui.menu import Menu
+from core.components.ui.textarea import TextArea
+from core.state import State
 
 # Create a logger for optional handling of debug messages.
 logger = logging.getLogger(__name__)
@@ -53,10 +56,12 @@ def add_menu_items(state, items):
         state.add(item)
 
 
-class DebugMenuState(Menu):
+class DebugMenuState(Layout, State):
     """
     Menu for the world state
     """
+    draw_borders = False
+    background_filename = "gfx/backgrounds/autumn.png"
     chars = u"ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
     animate_contents = True
     empty_box = "< map name >"
@@ -82,52 +87,23 @@ class DebugMenuState(Menu):
             ('debug_show_state', not_implemented_dialog),
         ]
 
-        self.input_string = ""
-
-        # area where the input will be shown
-        self.text_area = TextArea(self.font, self.font_color, (96, 96, 96))
-        self.text_area.animated = False
-        self.text_area.rect = tools.scaled_rect(20, 23, 80, 100)
-        self.text_area.text = self.empty_box
-        self.sprites.add(self.text_area)
-
-        self.filenames = VisualSpriteList(parent=self.calc_filenames_rect)
-        self.filenames.columns = 1
-        self.filenames.line_spacing = tools.scale(7)
-
         # add_menu_items(self, menu_items_map)
         self.change_map()
-        self.update_text_area()
 
-    def process_event(self, event):
-        super(DebugMenuState, self).process_event(event)
+        # load and scale the _background
+        background = None
+        if self.background_filename:
+            background = tools.load_image(self.background_filename)
 
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_BACKSPACE:
-                self.backspace()
-                return
+        # load and scale the menu borders
+        border = None
+        if self.draw_borders:
+            border = tools.load_and_scale(self.borders_filename)
 
-            char = event.unicode.upper()
-            if char in self.chars:
-                for index, item in enumerate(self.menu_items):
-                    if char == item.label:
-                        self.change_selection(index)
-                        self.add_input_char(char)
-                        return
-                return
-
-    def backspace(self):
-        self.input_string = self.input_string[:-1]
-        self.update_text_area()
-
-    def add_input_char(self, char):
-        self.input_string += char
-        self.update_text_area()
-
-    def draw(self, surface):
-        super(DebugMenuState, self).draw(surface)
-        self.filenames.draw(surface)
-        # surface.fill((10, 0, 0), self.filenames.rect)
+        # set the helper to draw the _background
+        self.window = GraphicBox(border, background, (12, 222, 222))
+        self.window.rect = pygame.Rect(0, 0, 700, 700)
+        self.add_widget(self.window, -1)
 
     def scan_maps(self):
         """ Scan the resources folder for maps to open
@@ -137,51 +113,59 @@ class DebugMenuState(Menu):
         folder = tools.transform_resource_filename('maps')
         return sorted(glob.glob(join(folder, '*.tmx')))
 
-    def update_text_area(self):
-        if self.input_string == '':
-            self.text_area.text = self.empty_box
-        else:
-            self.text_area.text = self.input_string
+    def process_event(self, event):
+        event = super(DebugMenuState, self).process_event(event)
         self.update_filename_list()
+        return event
 
     def update_filename_list(self):
-        self.filenames.empty()
         change_map = self.game.get_state_name('WorldState').change_map
         for path in self.scan_maps():
             # if input is empty, add all the maps
             # otherwise, filter by the input string
             map_name = basename(path)[:-4]
-            if self.input_string == '' or self.input_string in map_name.upper():
-                image = self.shadow_text(map_name)
-                item = MenuItem(image, path, None, partial(change_map, path))
-                self.filenames.add(item)
+            input = self.key_input.string_input
+            if input == '' or input in map_name.upper():
+                item = build_text_item(map_name, partial(change_map, path))
+                self.filenames.add_widget(item)
 
-    def calc_internal_rect(self):
-        """ Character input area
+        self.filenames.check_bounds()
 
-        :return:
-        """
-        return tools.scaled_rect(7, 40, 100, 100)
-
-    def calc_filenames_rect(self):
-        """ Filenames area
-
-        :return:
-        """
-        return tools.scaled_rect(115, 8, 150, 130)
 
     def change_map(self):
-        self.menu_items.columns = len(self.chars) // 6
-        self.menu_items.empty()
+        self.filenames = MenuLayout()
+        self.filenames.line_spacing = tools.scale(7)
+        self.filenames.rect = tools.scaled_rect(115, 8, 150, 130)
+        self.add_widget(self.filenames)
 
+        # area where the input will be shown
+        font = tools.load_default_font()
+
+        self.font_color = (0, 0, 0)
+        self.text_area = TextArea(font, self.font_color, (96, 96, 96))
+        self.text_area.animated = False
+        self.text_area.rect = tools.scaled_rect(20, 23, 80, 100)
+        self.text_area.text = self.empty_box
+        self.add_widget(self.text_area)
+
+        self.key_input = Menu()
+        self.key_input.menu_items.columns = len(self.chars) // 6
+        self.key_input.rect = tools.scaled_rect(7, 40, 100, 100)
+        self.add_widget(self.key_input)
+
+        add_widget = self.key_input.menu_items.add_widget
         for char in self.chars:
-            self.build_item(char, partial(self.add_input_char, char))
+            # add individual character
+            item = build_text_item(char, partial(self.key_input.add_input_buffer, char))
+            add_widget(item)
 
         # backspace key
-        self.menu_items.add(MenuItem(self.shadow_text("<="), None, None, self.backspace))
+        item = build_text_item("<=", self.key_input.backspace)
+        add_widget(item)
 
         # button to confirm the input and close the dialog
-        self.menu_items.add(MenuItem(self.shadow_text("END"), None, None, self.confirm))
+        item = build_text_item("END", self.confirm())
+        add_widget(item)
 
     def confirm(self):
         pass

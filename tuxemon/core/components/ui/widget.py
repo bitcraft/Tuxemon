@@ -57,6 +57,7 @@ class Widget(object):
         self.children = list()
         self.animations = Group()
         self.padding = 0
+        self.transparent = True
         self._needs_refresh = True
         self._in_refresh = False
         self._anchors = dict()  # used to position the menu/state
@@ -150,10 +151,6 @@ class Widget(object):
         :rtype: pygame Event
 
         """
-        # print(self)
-        # print("children: ", list(self.walk()))
-        # print("real    : ", self.children)
-        # print()
         for child in list(self.children):
             if event is None:
                 break
@@ -223,7 +220,6 @@ class Widget(object):
             old = None
 
         if self.parent:
-            print(self, self.parent, self.rect, self.parent.inner_rect)
             # self.parent.update_rect_from_parent()
             # set our rect to the rect of the parent
             # cannot copy object b/c animations may be modifying the rect
@@ -237,7 +233,6 @@ class Widget(object):
                 self.rect.h = inner.h
 
         else:
-            print(self, self.parent, self.rect, self.inner_rect)
             if self.rect is None:
                 self.rect = Rect((0, 0), prepare.SCREEN_SIZE)
                 # self.rect.topleft = 0, 0
@@ -282,7 +277,6 @@ class Widget(object):
 
             self._refresh_layout()
             self.inner_rect = self._calc_internal_rect()
-            print("CHECK {} {} {}".format(self, self.rect, self.inner_rect))
 
             for child in self.children:
                 child.trigger_refresh()
@@ -386,7 +380,6 @@ class Widget(object):
         rect = self.rect.copy()
         self.refresh_layout()
         self.rect = original
-        print(self, original, rect)
         return rect
 
     def add_widget(self, widget, index=None):

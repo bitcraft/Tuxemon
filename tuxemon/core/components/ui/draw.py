@@ -1,13 +1,11 @@
 from __future__ import division
 
-import math
 import logging
-from itertools import product
+import math
 
 import pygame
 
 from core import prepare
-from core.components.sprite import Sprite
 
 # Create a logger for optional handling of debug messages.
 logger = logging.getLogger(__name__)

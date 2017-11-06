@@ -25,6 +25,7 @@
 #
 #
 import logging
+import time
 
 import pygame
 
@@ -55,27 +56,28 @@ class Menu(Widget):
     animate_contents = False  # show contents while window opens
     cursor_filename = "gfx/arrow.png"
     cursor_move_duration = .20
-    touch_aware = False  # if true, then menu items can be selected with the mouse/touch
+    touch_aware = True  # if true, then menu items can be selected with the mouse/touch
+    key_aware = True  # if true, then keyboard input will try to find items
+    input_timeout = .01  # time to clear the keyboard input buffer
 
     def __init__(self):
         super(Menu, self).__init__()
+        self.selected_index = 0  # track which menu item is selected
+        self.menu_select_sound = tools.load_sound(self.menu_select_sound_filename)
+        self.font = tools.load_default_font()
 
-        self.menu_rect = None
+        # for keyboard input
+        self.string_input = ''  # for holding keyboard input
+        self._last_input = 0
+
+        self.menu_rect = None  # menu_items is a layout of stuff to select
         self.menu_items = GridLayout()
         self.menu_items.columns = self.columns
         self.add_widget(self.menu_items)
 
-        # generally just for the cursor arrow
+        # menu_sprites is a layout of the cursor, and maybe other things later
         self.menu_sprites = RelativeLayout()
         self.add_widget(self.menu_sprites)
-
-        self.selected_index = 0  # track which menu item is selected
-        # holds sprites representing menu items
-        self.arrow = None
-
-        self.menu_select_sound = tools.load_sound(self.menu_select_sound_filename)
-        self.line_spacing = tools.scale(10)
-        self.font = tools.load_default_font()
 
         # load the cursor
         image = tools.load_and_scale(self.cursor_filename)
@@ -98,6 +100,16 @@ class Menu(Widget):
         image = shadow_text(self.font, fg, bg, label)
         item = MenuItem(image, label, None, callback)
         self.menu_items.add_widget(item)
+
+    # INPUT BUFFER
+    def add_input_buffer(self, char):
+        self.string_input += char
+
+    def clear_input_buffer(self):
+        self.string_input = ''
+
+    def backspace(self):
+        self.string_input = self.string_input[:-1]
 
     # def start_text_animation(self, text_area):
     #     """ Start an animation to show textarea, one character at a time
@@ -231,11 +243,27 @@ class Menu(Widget):
                 if event.key == pygame.K_RETURN:
                     self.menu_select_sound.play()
                     self.on_menu_selection(self.get_selected_item())
+                    return
 
                 else:
                     index = self.menu_items.determine_cursor_movement(self.selected_index, event)
                     if not self.selected_index == index:
                         self.change_selection(index)
+                        return
+
+            # try to find items based on input
+            if self.key_aware:
+
+                # manage the keybuffer
+                # if time.time() > self._last_input + self.input_timeout:
+                #     self.clear_input_buffer()
+                #     self._last_input = time.time()
+
+                self.add_input_buffer(event.unicode.upper())
+                index = self.get_index_from_input()
+                if index is not None:
+                    self.change_selection(index)
+                    return
 
         # TODO: handling of click/drag, miss-click, etc
         # TODO: eventually, maybe move some handling into menuitems
@@ -265,6 +293,12 @@ class Menu(Widget):
                 if item.rect.collidepoint(mouse_pos):
                     self.change_selection(index)
                     self.on_menu_selection(self.get_selected_item())
+
+    def get_index_from_input(self):
+        for index, item in enumerate(self.menu_items):
+            if self.string_input in item.label.upper():
+                return index
+        return None
 
     def change_selection(self, index, animate=True):
         """ Force the menu to be evaluated and move cursor and trigger focus changes

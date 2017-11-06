@@ -39,6 +39,7 @@ from core import prepare, state
 from core.components import networking
 from core.components.game_event import GAME_EVENT, INPUT_EVENT
 from core.components.map import PathfindNode, Map, dirs2, pairs
+from core.components.ui.widget import Widget
 from core.tools import nearest
 
 # Create a logger for optional handling of debug messages.
@@ -53,7 +54,7 @@ keymap = {
 }
 
 
-class WorldState(state.State):
+class WorldState(state.State, Widget):
     """ The state responsible for the world game play
     """
 

@@ -198,8 +198,6 @@ class RelativeLayout(Layout):
 
         topleft = self.rect.topleft
 
-        print(topleft)
-
         spritedict = self.spritedict
         surface_blit = surface.blit
         dirty = self.lostsprites

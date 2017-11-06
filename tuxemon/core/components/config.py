@@ -22,7 +22,7 @@
 # Contributor(s):
 #
 # William Edwards <shadowapex@gmail.com>
-#
+# Leif Theden <leif.theden@gmail.com>
 #
 # core.components.config Configuration parser.
 #
@@ -65,6 +65,8 @@ class Config(object):
 
         self.controller_overlay = self.config.get("display", "controller_overlay")
         self.controller_transparency = int(self.config.get("display", "controller_transparency"))
+
+        self.show_mouse = bool(self.config.get("display", "show_mouse"))
 
         self.starting_map = self.config.get("game", "starting_map")
         self.cli = int(self.config.get("game", "cli_enabled"))
