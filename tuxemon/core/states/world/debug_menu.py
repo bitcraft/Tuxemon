@@ -1,5 +1,28 @@
 # -*- coding: utf-8 -*-
-
+#
+# Tuxemon
+# Copyright (C) 2014, William Edwards <shadowapex@gmail.com>,
+#                     Benjamin Bean <superman2k5@gmail.com>
+#
+# This file is part of Tuxemon.
+#
+# Tuxemon is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Tuxemon is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Tuxemon.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contributor(s):
+#
+# Leif Theden <leif.theden@gmail.com>
+#
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -17,7 +40,6 @@ from core.components.menu import Menu
 from core.components.menu.interface import MenuItem
 from core.components.sprite import VisualSpriteList
 from core.components.ui.text import TextArea
-from core.tools import open_dialog, transform_resource_filename
 
 # Create a logger for optional handling of debug messages.
 logger = logging.getLogger(__name__)
@@ -49,7 +71,7 @@ class DebugMenuState(Menu):
             self.game.event_engine.execute_action("quit")
 
         def not_implemented_dialog():
-            open_dialog(self.game, [translator.translate('not_implemented')])
+            tools.open_dialog(self.game, [translator.translate('not_implemented')])
 
         # Main Menu - Allows users to open the main menu in game.
         menu_items_map = [
@@ -115,7 +137,7 @@ class DebugMenuState(Menu):
 
         :return:
         """
-        folder = transform_resource_filename('maps')
+        folder = tools.transform_resource_filename('maps')
         return sorted(glob.glob(join(folder, '*.tmx')))
 
     def update_text_area(self):
@@ -154,8 +176,18 @@ class DebugMenuState(Menu):
     def change_map(self):
         self.menu_items.columns = len(self.chars) // 6
         self.menu_items.empty()
+
         for char in self.chars:
             self.build_item(char, partial(self.add_input_char, char))
+
+        # backspace key
+        self.menu_items.add(MenuItem(self.shadow_text("<="), None, None, self.backspace))
+
+        # button to confirm the input and close the dialog
+        self.menu_items.add(MenuItem(self.shadow_text("END"), None, None, self.confirm))
+
+    def confirm(self):
+        pass
 
     def reload_map(self):
         pass
