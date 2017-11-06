@@ -209,11 +209,11 @@ class Task(AnimBase):
             self._duration -= self._interval
             if self._loops >= 0:
                 self._loops -= 1
-                if self._loops == 0: # loops counter is zero, finish now
+                if self._loops == 0:  # loops counter is zero, finish now
                     self.finish()
-                else:                # not finished, but still are iterations left
+                else:  # not finished, but still are iterations left
                     self._execute_callbacks("on interval")
-            else:                    # loops == -1, run forever
+            else:  # loops == -1, run forever
                 self._execute_callbacks("on interval")
 
     def finish(self):
@@ -311,7 +311,7 @@ class Animation(pygame.sprite.Sprite):
     def __init__(self, *targets, **kwargs):
         super(Animation, self).__init__()
         self.targets = list()
-        self._targets = list()      #  used when there is a delay
+        self._targets = list()  # used when there is a delay
         self.delay = kwargs.get('delay', 0)
         self._state = ANIMATION_NOT_STARTED
         self._round_values = kwargs.get('round_values', False)
@@ -490,10 +490,13 @@ class Animation(pygame.sprite.Sprite):
 
     def _gather_initial_values(self):
         self.targets = list()
+
         for target in self._targets:
             props = dict()
+
             if isinstance(target, pygame.Rect):
                 self._round_values = True
+
             for name, value in self.props.items():
                 initial = self._get_value(target, name)
                 is_number(initial)
@@ -501,6 +504,7 @@ class Animation(pygame.sprite.Sprite):
                 if self._relative:
                     value += initial
                 props[name] = initial, value
+
             self.targets.append((target, props))
 
         self.update(0)

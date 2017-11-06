@@ -27,159 +27,125 @@
 # core.components.ui User interface handling module.
 #
 #
-import logging
-
-from core import tools
-from core.components import pyganim
-
-# Create a logger for optional handling of debug messages.
-logger = logging.getLogger(__name__)
+from __future__ import absolute_import
 
 
-class UserInterface(object):
-    """A basic user interface object.
-
-    :param image: Path to the image to load or surface.
-    :param position: The [x, y] position to draw the UI element.
-    :param screen: The pygame surface to draw the element on.
-    :param scale: Whether or not to scale the surface based on game's scale.
-
-    :type image: String or pygame.Surface
-    :type position: List
-    :type screen: pygame.Surface
-    :type scale: Boolean
-
+def draw_text(surface, text=None, rect=None, justify="left", align=None,
+              font=None, font_size=None, font_color=None):
+    """Draws text to a surface. If the text exceeds the rect size, it will
+    autowrap. To place text on a new line, put TWO newline characters (\\n)  in your text.
+    :param text: The text that you want to draw to the current menu item.
+        *Default: core.components.menu.Menu.text*
+    :param left: The horizontal pixel position of the text relative to the menu's position.
+        *Default: 0*
+    :param top: The vertical pixel position of the text relative to the menu's position.
+        *Default: 0*
+    :param justify: Left, center, or right justify the text. Valid options: "left", "center",
+        "right". *Default: "left"*
+    :param align: Align the text to the top, middle, or bottom of the menu. Valid options:
+        "top", "middle", "bottom". *Default: "top"*
+    :param font_size: Size of the font in pixels BEFORE scaling is done. *Default: 4*
+    :param font_color: Tuple of RGB values of the font _color to use. *Default: (10, 10, 10)*
+    :type text: String
+    :type left: Integer
+    :type top: Integer
+    :type justify: String
+    :type align: String
+    :type font_size: Integer
+    :type font_color: Tuple
+    :rtype: None
+    :returns: None
+    **Examples:**
+    >>> draw_text(screen "boo", justify="center", align="middle")
+    .. image:: images/menu/justify_center.png
     """
+    left, top, width, height = rect
 
-    def __init__(self, images, position, animation_speed=0.2, animation_loop=False):
+    if not font_color:
+        font_color = (0, 0, 0)
 
-        # Check to see what kind of image(s) are being loaded.
-        images_type = type(images).__name__
+    # Create a text surface so we can determine how many pixels
+    # wide each character is
+    text_surface = font.render(text, 1, font_color)
 
-        # Handle loading a single image, multiple images, or surfaces
-        if images_type == 'str' or images_type == 'unicode':
-            surface = tools.load_and_scale(images)
-            self.images = [(surface, animation_speed)]
+    # Calculate the number of pixels per letter based on the size
+    # of the text and the number of characters in the text
 
-        elif images_type == 'list' or images_type == 'tuple':
-            self.images = []
+    if not text:
+        return
 
-            for item in images:
-                item_type = type(item).__name__
+    pixels_per_letter = text_surface.get_width() / len(text)
 
-                if item_type == 'str' or item_type == 'unicode':
-                    surface = tools.load_and_scale(images)
+    # Create a list of the lines of text as well as a list of the
+    # individual words so we can check each line's length in pixels
+    lines = []
+    wordlist = []
+
+    # Loop through each word in the text and add it to the word list
+    for word in text.split():
+
+        # If there is a linebreak in this word, then split it up into a list separated by \n
+        if "\\n" in word:
+            w = word.split("\\n")
+
+            # Loop through the list and every time we encounter a blank string, then that is
+            # a new line. So we append the current line and reset the word list for a new line
+            for item in w:
+                if item == '':
+                    # This is a new line!
+                    lines.append(" ".join(wordlist))
+                    wordlist = []
+                # If we encounter an actual word, then just append it to the word list
                 else:
-                    surface = item
-                self.images.append((surface, animation_speed))
+                    wordlist.append(item)
 
+        # If there's no line break, continue normally to word wrap
         else:
-            surface = images
-            self.images = [(surface, animation_speed)]
 
-        # Create a pyganimation object using our loaded images.
-        self.animation = pyganim.PygAnimation(self.images, loop=animation_loop)
-        self.animation.play()
-        self.animation.pause()
+            # Append the word to the current line
+            wordlist.append(word)
 
-        self.rect = self.images[0][0].get_rect(topleft=position)
+            # Here, we convert the list into a string separated by spaces and multiply
+            # the number of characters in the string by the number of pixels per letter
+            # that we calculated earlier. This will let us know how large the text will
+            # be in pixels.
+            if len(" ".join(wordlist)) * pixels_per_letter > width:
+                # If the size exceeds the width of the menu, then append the line to the
+                # list of lines, but stripping off the last word we added (because this
+                # was the word that made us exceed the menubox's size.
+                lines.append(" ".join(wordlist[:-1]))
 
-        self.visible = True
-        self.state = ""
+                # Reset the wordlist for the next line and add the word we stripped off
+                wordlist = []
+                wordlist.append(word)
 
-        self.moving = False
-        self.move_destination = (0, 0)
-        self.move_delta = [0, 0]
-        self.move_duration = 0.
-        self.move_time = 0.
-        self.fading = False
-        self.fade_duration = 0.
-        self.shaking = False
+    # If the last line is not blank, then append it to the list
+    if " ".join(wordlist) != '':
+        lines.append(" ".join(wordlist))
 
-    def draw(self, surface):
-        """Draws the UI element to the screen.
+    # If the justification was set, handle the position of the text automatically
+    if justify == "center":
+        if lines:
+            left = (left + (width / 2)) - \
+                    ((len(lines[0]) * pixels_per_letter) / 2)
+        else:
+            left = 0
 
-        :param surface: Surface to draw onto
-        :param: None
-        :type: None
+    elif justify == "right":
+        raise NotImplementedError("Needs to be implemented")
 
-        """
-        if self.visible:
-            self.animation.blit(surface, self.rect)
+    # If text alignment was set, handle the position of the text automatically
+    if align == "middle":
+        top = (top + (height / 2)) - \
+                ((text_surface.get_height() * len(lines)) / 2)
 
-    def play(self):
-        self.animation.play()
+    elif align == "bottom":
+        raise NotImplementedError("Needs to be implemented")
 
-    def pause(self):
-        self.animation.pause()
+    # Set a spacing variable that we will add to to space each line.
+    spacing = 0
+    for item in lines:
+        line = font.render(item, 1, font_color)
 
-    def stop(self):
-        self.animation.stop()
-
-    def shake(self, intensity, direction="random"):
-        """Shakes the object a given severity.
-
-        :param intensity: How much the object will shake.
-        :param direction: Direction to shake in degrees, defaults to "random".
-
-        :type intensity: Int
-        :type direction: Int or String
-
-        """
-        pass
-
-    def fade_in(self, duration=1.):
-        """Fades the object in.
-
-        :param duration: Fade the object in over n seconds, defaults to 1.
-        :type duration: Float
-
-        """
-        if not self.state == "fading_in":
-            self.state = "fading_in"
-            self.fading = "in"
-            self.fade_duration = duration
-
-    def fade_out(self, duration=1.):
-        """Fades the object out.
-
-        :param duration: Fade the object out over n seconds, defaults to 1.
-        :type duration: Float
-
-        """
-        if not self.state == "fading_out":
-            self.state = "fading_out"
-            self.fading = "out"
-            self.fade_duration = duration
-
-    def move(self, destination, duration=1.):
-        """Moves the object to position over n seconds.
-
-        :param destination: The (x, y) screen destination position to move to.
-        :param duration: Moves the object over n seconds, defaults to 1.
-
-        :type destination: Tuple
-        :type duration: Float
-
-        """
-        if not self.state == "moving":
-            self.state = "moving"
-            self.moving = True
-            self.move_destination = destination
-            self.move_time = 0.
-            # self.move_delta.append(self.position[1] - destination[1])
-            # self.move_delta = list(map(operator.sub, self.position, destination))
-            # self.move_duration = float(duration)
-
-    def shake_once(self, destination, duration=0.3):
-        """Moves the object to a position and then back to its original position.
-        """
-        if not self.state == "forward" or not self.state == "back":
-            self.move(destination, duration)
-            self.state = "forward"
-
-    def scale(self, width_height):
-        self.animation.scale(width_height)
-
-
-import core.components.ui.bar
+        surface.blit(line, (left, top + spacing))
+        spacing += line.get_height() # + self.line_spacing

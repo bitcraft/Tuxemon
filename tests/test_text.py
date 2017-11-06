@@ -4,9 +4,9 @@ import sys
 import unittest
 
 # for some test runners that cannot find the tuxemon core
-sys.path.insert(0, os.path.join('tuxemon', ))
+import core.components.ui.font
 
-from tuxemon.core.components.ui import draw
+sys.path.insert(0, os.path.join('tuxemon', ))
 
 
 def flatten(it):
@@ -21,7 +21,7 @@ def flatten(it):
 class TextTestCase(unittest.TestCase):
     def test_iterate_letters(self):
         text = "test"
-        for i, c in enumerate(draw.iterate_words(text)):
+        for i, c in enumerate(core.components.ui.font.iterate_words(text)):
             value = text[:i + 1]
             self.assertEqual(c, value)
 
@@ -29,28 +29,28 @@ class TextTestCase(unittest.TestCase):
         input = "test"
         expected = ["test"]
 
-        output = list(draw.iterate_lines(input))
+        output = list(core.components.ui.font.iterate_lines(input))
         self.assertEqual(expected, output)
 
     def test_iterate_letters_with_newline(self):
         input = "test\n"
         expected = ["test"]
 
-        output = list(draw.iterate_lines(input))
+        output = list(core.components.ui.font.iterate_lines(input))
         self.assertEqual(expected, output)
 
     def test_iterate_letters_with_multiple_newlines(self):
         input = "test\ntest"
         expected = ["test", "test"]
 
-        output = list(draw.iterate_lines(input))
+        output = list(core.components.ui.font.iterate_lines(input))
         self.assertEqual(expected, output)
 
     def test_iterate_letters_with_multiple_newlines_trailing(self):
         input = "test\ntest\n"
         expected = ["test", "test"]
 
-        output = list(draw.iterate_lines(input))
+        output = list(core.components.ui.font.iterate_lines(input))
         self.assertEqual(expected, output)
 
         # def test_iterate_character_lines(self):

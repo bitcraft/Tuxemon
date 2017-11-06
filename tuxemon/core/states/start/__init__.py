@@ -30,16 +30,18 @@
 #
 """This module contains the Start state.
 """
+from __future__ import absolute_import
 
 import logging
-from os.path import join
 from functools import partial
 
 from core import prepare
-from core.state import State
-from core.components.menu.interface import MenuItem
-from core.components.menu.menu import PopUpMenu
 from core.components.locale import translator
+from core.components.ui.menu import Menu
+from core.components.ui.popup import PopUpMenu
+from core.state import State
+
+trans = translator.translate
 
 # Create a logger for optional handling of debug messages.
 logger = logging.getLogger(__name__)
@@ -63,30 +65,31 @@ class BackgroundState(State):
         self.game.pop_state()
 
 
-class StartState(PopUpMenu):
+class StartState(PopUpMenu, State):
     """ The state responsible for the start menu.
     """
     shrink_to_items = True
 
     def startup(self, *args, **kwargs):
-        super(StartState, self).startup(*args, **kwargs)
+        # super(StartState, self).startup(*args, **kwargs)
+
+        menu = Menu()
+        self.add_widget(menu)
 
         def change_state(state, **kwargs):
             return partial(self.game.push_state, state, **kwargs)
 
         def new_game():
-            # load the starting map
-            state = self.game.replace_state("WorldState")
-            map_name = join(prepare.BASEDIR, prepare.DATADIR, 'maps', prepare.CONFIG.starting_map)
-            state.change_map(map_name)
-            self.game.push_state("InputMenu", prompt=translator.translate("input_name"))
+            self.game.player1 = prepare.player1
+            self.game.replace_state("WorldState")
+            self.game.push_state("InputMenu", prompt=trans("input_name"))
             self.game.push_state("FadeInTransition")
 
         def options():
             pass
 
         def exit_game():
-            self.game.exit = True
+            self.game.event_engine.execute_action("quit")
 
         menu_items_map = (
             ('menu_new_game', new_game),
@@ -96,7 +99,4 @@ class StartState(PopUpMenu):
         )
 
         for key, callback in menu_items_map:
-            label = translator.translate(key).upper()
-            image = self.shadow_text(label)
-            item = MenuItem(image, label, None, callback)
-            self.add(item)
+            menu.build_text_item(trans(key).upper(), callback)

@@ -39,8 +39,9 @@ from functools import partial
 from core.tools import open_dialog
 from core.components.game_event import GAME_EVENT, INPUT_EVENT
 from core.components.locale import translator
-from core.components.menu.menu import PopUpMenu
+from core.components.ui.popup import PopUpMenu
 from core.components.menu.interface import MenuItem
+from core.components.ui.font import shadow_text
 
 # Create a logger for optional handling of debug messages.
 logger = logging.getLogger(__name__)
@@ -52,7 +53,7 @@ trans = translator.translate
 def add_menu_items(state, items):
     for key, callback in items:
         label = trans(key).upper()
-        state.build_item(label, callback)
+        state.build_text_item(label, callback)
 
 
 class PCState(PopUpMenu):
@@ -166,10 +167,10 @@ class MultiplayerSelect(PopUpMenu):
         servers = self.game.client.server_list
         if servers:
             for server in servers:
-                label = self.shadow_text(server)
+                label = shadow_text(self.font, server)
                 yield MenuItem(label, None, None, None)
         else:
-            label = self.shadow_text(trans('multiplayer_no_servers'))
+            label = shadow_text(self.font, trans('multiplayer_no_servers'))
             item = MenuItem(label, None, None, None)
             item.enabled = False
             yield item

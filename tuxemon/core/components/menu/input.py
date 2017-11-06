@@ -9,7 +9,7 @@ from functools import partial
 from core import tools
 from core.components.menu import Menu
 from core.components.menu.interface import MenuItem
-from core.components.ui.text import TextArea
+from core.components.ui.textarea import TextArea
 from core.components.game_event import input_event
 
 import pygame

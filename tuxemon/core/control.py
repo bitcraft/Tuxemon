@@ -274,6 +274,7 @@ class Control(StateManager):
         draw = True
         to_draw = list()
         full_screen = self.screen.get_rect()
+
         for state in self.active_states:
             state.update(dt)
             if draw:
@@ -285,6 +286,8 @@ class Control(StateManager):
                 and state.rect == full_screen
                 and not state.force_draw):
                 draw = False
+
+        self.screen.fill((0, 0, 0))
 
         # draw from bottom up for proper layering
         for state in reversed(to_draw):

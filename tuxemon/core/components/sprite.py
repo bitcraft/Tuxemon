@@ -231,11 +231,11 @@ class SpriteGroup(pygame.sprite.LayeredUpdates):
         used to add the sprites.
         """
         layer = kwargs.get('layer')
-        if isinstance(sprite, pygame.sprite.Sprite):
+        try:
             if not self.has_internal(sprite):
                 self.add_internal(sprite, layer)
                 sprite.add_internal(self)
-        else:
+        except AttributeError:
             raise TypeError
 
     def calc_bounding_rect(self):

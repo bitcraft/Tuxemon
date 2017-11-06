@@ -27,11 +27,11 @@
 # core.components.ui.bar UI bar handling module.
 #
 #
-
 import logging
 
 import pygame
 
+from core.components.ui.userinterface import UserInterface
 from core.components.ui import UserInterface
 
 # Create a logger for optional handling of debug messages.

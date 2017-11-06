@@ -34,17 +34,18 @@ import pygame
 
 from core import prepare
 from core import tools
-from core.components.animation import Animation
-from core.components.animation import Task
-from core.components.animation import remove_animations_of
 from core.components.sprite import SpriteGroup
+from core.components.ui.widget import Widget
 
 # Create a logger for optional handling of debug messages.
 logger = logging.getLogger(__name__)
 
 
 class State(object):
-    """ This is a prototype class for States.
+    """ This is a mixin class for Widgets.
+    
+    Add this as a super class to a Widget to allow it to operate on
+    the StateStack for game flow control.
 
     All states should inherit from it. No direct instances of this
     class should be created. Update must be overloaded in the child class.
@@ -63,11 +64,10 @@ class State(object):
     """
     __metaclass__ = ABCMeta
 
-    rect = pygame.Rect((0, 0), prepare.SCREEN_SIZE)
-    transparent = False   # ignore all background/borders
-    force_draw = False    # draw even if completely under another state
+    transparent = False  # ignore all background/borders
+    force_draw = False  # draw even if completely under another state
 
-    def __init__(self, control):
+    def __init__(self):
         """ Do not override this unless there is a special need.
 
         All init for the State, loading of config, images, etc should
@@ -76,11 +76,16 @@ class State(object):
         :param control: State Manager / Control / Game... all the same
         :returns: None
         """
-        self.game = control  # TODO: rename 'game' to 'control'?
+        super(State, self).__init__()
+
+        # self.game = control  # TODO: rename 'game' to 'control'?
         self.start_time = 0.0
         self.current_time = 0.0
         self.animations = pygame.sprite.Group()  # only animations and tasks
-        self.sprites = SpriteGroup()             # all sprites that draw on the screen
+        self.sprites = SpriteGroup()  # all sprites that draw on the screen
+
+    def __repr__(self):
+        return "<State: {}".format(self.name)
 
     @property
     def name(self):
@@ -101,75 +106,11 @@ class State(object):
         self.sprites.add(sprite, layer=layer)
         return sprite
 
-    def animate(self, *targets, **kwargs):
-        """ Animate something in this state
-
-        Animations are processed even while state is inactive
-
-        :param targets: targets of the Animation
-        :type targets: any
-        :param kwargs: Attributes and their final value
-        :returns: core.components.animation.Animation
-        """
-        ani = Animation(*targets, **kwargs)
-        self.animations.add(ani)
-        return ani
-
-    def task(self, *args, **kwargs):
-        """ Create a task for this state
-
-        Tasks are processed even while state is inactive
-        If you want to pass positional arguments, use functools.partial
-
-        :param args: function to be called
-        :param kwargs: kwargs passed to the function
-        :returns: core.components.animation.Task
-        """
-        task = Task(*args, **kwargs)
-        self.animations.add(task)
-        return task
-
-    def remove_animations_of(self, target):
-        """ Given and object, remove any animations that it is used with
-
-        :param target: any
-        :returns: None
-        """
-        remove_animations_of(target, self.animations)
-
-    def process_event(self, event):
-        """ Processes events that were passed from the main event loop.
-
-        This function can choose to return the event, or any other in
-        response to the event passed.  If the same, or any other event
-        is returned, then it will be passed down to other states.
-
-        :param event: A pygame key event from pygame.event.get()
-        :type event: PyGame Event
-        :returns: Pygame Event or None
-        :rtype: pygame Event
-
-        """
-        return event
-
-    # def __del__(self):
-    #     print "dying", self
-
     def update(self, time_delta):
         """ Time update function for state.  Must be overloaded in children.
 
         :param time_delta: amount of time in fractional seconds since last update
         :type time_delta: Float
-        :returns: None
-        :rtype: None
-        """
-        self.animations.update(time_delta)
-
-    def draw(self, surface):
-        """ Render the state to the surface passed.  Must be overloaded in children
-
-        :param surface: Surface to be rendered onto
-        :type surface: pygame.Surface
         :returns: None
         :rtype: None
         """
@@ -309,7 +250,7 @@ class StateManager(object):
         classes = inspect.getmembers(sys.modules[import_name], inspect.isclass)
 
         for c in (i[1] for i in classes):
-            if issubclass(c, State):
+            if issubclass(c, Widget):
                 yield c
 
     def collect_states_from_path(self, folder):
@@ -425,7 +366,8 @@ class StateManager(object):
         if previous is not None:
             previous.pause()
 
-        instance = state(self)
+        instance = state()
+        instance.game = self
         self._state_stack.insert(0, instance)
 
         instance.controller = self

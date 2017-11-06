@@ -26,12 +26,20 @@
 # Leif Theden <leif.theden@gmail.com>
 #
 #
+"""
+
+This module is a random collection of things that don't currently
+have a home somewhere else.  It is the Tuxemon codebase junk drawer.
+
+"""
+from __future__ import absolute_import
 from __future__ import division
 
 import logging
 import operator
 import os.path
 import re
+from itertools import product
 
 import pygame
 
@@ -43,9 +51,104 @@ from core.platform import mixer
 # Create a logger for optional handling of debug messages.
 logger = logging.getLogger(__name__)
 
+# map of axis names to the named edges along a pygame rect
+axis_rect_edge_map = {"y": {"top", "bottom"}, "x": {"left", "right"}}
+
+# font cache, since it is used often and slow to load
+_font_cache = dict()
+
+
+def calc_scroll_thing(rect, group, bounds):
+    """ Very poorly named.  See description.
+
+    Given a rect, group rect and bounding box, return a dictionary
+    that describes the movement along any axis that will cause the
+    rect to be contained fully inside the bounds.
+
+    :type rect: pygame.Rect
+    :type group: pygame.Group
+    :type bounds: pygame.Rect
+
+    :rtype: dict
+    """
+    # check if the selected thing is outside the screen
+    if bounds.contains(rect):
+        return None
+
+    # get a list of axes that are allowed to scroll
+    scroll_axes = calc_scroll_freedom(group, bounds)
+
+    # only calculate changes if the menu is able to scroll
+    if scroll_axes:
+        # get which quadrant the selected item is in in relation to the screen
+        quadrants = calc_quadrant(rect, bounds)
+
+        diff = dict()
+        for axis in scroll_axes:
+            # for each axis, get the quadrant that the menu item is in
+            # then determine the distance needed to move the scrollable
+            # region so that the edges match and rect is contained in bounds
+            d = axis_rect_edge_map[axis].intersection(quadrants).pop()
+            diff[d] = getattr(bounds, d) - getattr(rect, d)
+
+        return diff
+
+    else:
+        return None
+
+
+def calc_scroll_freedom(rect, parent):
+    """ Very poorly named.  See description.
+
+    Given a rect and a parent, return any axis that the
+    the rect could move, if constrained by the parent rect.
+    This is used to determine valid movements for scrolling
+    regions.
+
+    :type rect: pygame.Rect
+    :type parent: pygame.Rect
+    :rtype: list
+    """
+    x = rect.width > parent.width
+    y = rect.height > parent.height
+
+    if x and y:
+        return {'x', 'y'}
+    elif x:
+        return {'x'}
+    elif y:
+        return {'y'}
+    else:
+        return None
+
+
+def calc_quadrant(rect, parent):
+    """ Determine which quadrant (n, e, s, w) the rect is in
+
+    Uses pygame Rect terms: "top bottom left right"
+    If return value is empty set, then the rects overlap exactly
+
+    :type rect: pygame.Rect
+    :type parent: pygame.Rect
+    :rtype: set
+    """
+    q = set()
+
+    if rect.centerx > parent.centerx:
+        q.add("right")
+    elif rect.centerx < parent.centerx:
+        q.add("left")
+
+    if rect.centery > parent.centery:
+        q.add("bottom")
+    elif rect.centery < parent.centery:
+        q.add("top")
+
+    return q
+
 
 def strip_from_sheet(sheet, start, size, columns, rows=1):
-    """Strips individual frames from a sprite sheet given a start location,
+    """ Strips individual frames from a sprite sheet given a start location,
     sprite size, and number of columns and rows."""
     frames = []
     for j in range(rows):
@@ -56,7 +159,7 @@ def strip_from_sheet(sheet, start, size, columns, rows=1):
 
 
 def strip_coords_from_sheet(sheet, coords, size):
-    """Strip specific coordinates from a sprite sheet."""
+    """ Strip specific coordinates from a sprite sheet."""
     frames = []
     for coord in coords:
         location = (coord[0] * size[0], coord[1] * size[1])
@@ -65,7 +168,7 @@ def strip_coords_from_sheet(sheet, coords, size):
 
 
 def get_cell_coordinates(rect, point, size):
-    """Find the cell of size, within rect, that point occupies."""
+    """ Find the cell of size, within rect, that point occupies."""
     cell = [None, None]
     point = (point[0] - rect.x, point[1] - rect.y)
     cell[0] = (point[0] // size[0]) * size[0]
@@ -74,7 +177,7 @@ def get_cell_coordinates(rect, point, size):
 
 
 def cursor_from_image(image):
-    """Take a valid image and create a mouse cursor."""
+    """ Take a valid image and create a mouse cursor."""
     colors = {(0, 0, 0, 255): "X",
               (255, 255, 255, 255): "."}
     rect = image.get_rect()
@@ -145,6 +248,49 @@ def load_image(filename):
     return smart_convert(pygame.image.load(filename))
 
 
+def load_font(filename, size):
+    """ Load font from the resources folder
+
+    * Filename will be transformed to be loaded from game resource folder
+    * Font will be no smaller thn the configured smallest size
+    * Font will be scaled to fit the screen
+
+    :param filename: String
+    :type size: int
+    :rtype: pygame.font.Font
+    """
+    # the next line determines where fonts are stored
+    filename = os.path.join('font', filename)
+    filename = transform_resource_filename(filename)
+    size = min(prepare.MIN_FONT_SIZE, size)
+    font_size = scale(size)
+    return pygame.font.Font(filename, font_size)
+
+
+def get_cached_font(filename, size):
+    """ Attempt to load a font from the cache.  Load if not found.
+
+    :param filename: String
+    :type size: int
+    :rtype: pygame.font.Font
+    """
+    key = filename, size
+    try:
+        return _font_cache[key]
+    except KeyError:
+        font = load_font(filename, size)
+        _font_cache[key] = font
+        return font
+
+
+def load_default_font():
+    """ Convenience function to load the default font
+
+    :rtype: pygame.font.Font
+    """
+    return get_cached_font(prepare.DEFAULT_FONT_FILENAME, prepare.DEFAULT_FONT_SIZE)
+
+
 def load_sprite(filename, **rect_kwargs):
     """ Load an image from disk and return a pygame sprite
 
@@ -157,7 +303,8 @@ def load_sprite(filename, **rect_kwargs):
     :param filename: Filename to load
     :rtype: core.components.sprite.Sprite
     """
-    sprite = core.components.sprite.Sprite()
+    from core.components.sprite import Sprite
+    sprite = Sprite()
     sprite.image = load_and_scale(filename)
     sprite.rect = sprite.image.get_rect(**rect_kwargs)
     return sprite
@@ -323,6 +470,21 @@ def convert_alpha_to_colorkey(surface, colorkey=(255, 0, 255)):
     return image
 
 
+def make_shadow_surface(surface, color=(0, 0, 0, 96)):
+    """create a surface suitable to be used as a shadow
+
+    slow.  use once and cache the result
+    image must have alpha channel or results are undefined
+    """
+    w, h = surface.get_size()
+    shad = pygame.Surface((w, h), flags=pygame.SRCALPHA)
+    mask = pygame.mask.from_surface(surface)
+    for pixel in product(range(w), range(h)):
+        if mask.get_at(pixel):
+            shad.set_at(pixel, color)
+    return shad
+
+
 def check_parameters(parameters, required=0, exit=True):
     """
     Checks to see if a given list has the required number of items
@@ -393,15 +555,34 @@ def calc_dialog_rect(screen_rect):
 
 
 def open_dialog(game, text, menu=None):
-    """ Open a dialog with the standard window size
+    """ Open a dialog along the bottom edge of the screen
 
-    :param game:
+    This dialog is typically used for spoken words between characters.
+
+    :type game: core.control.Control
     :param text: list of strings
+    :param menu:
 
     :rtype: core.states.dialog.DialogState
     """
     rect = calc_dialog_rect(game.screen.get_rect())
     return game.push_state("DialogState", text=text, rect=rect, menu=menu)
+
+
+def open_info_dialog(game, text, menu=None):
+    """ Open a dialog in the center of the screen
+
+    This dialog is typically used for messages from the game to the player.
+
+    :type game: core.control.Control
+    :param text: list of strings
+    :param menu:
+
+    :rtype: State
+    """
+    state = game.push_state("DialogState", text=text, menu=menu)
+    state.shrink_to_items = True
+    return state
 
 
 def nearest(l):

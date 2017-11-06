@@ -8,12 +8,16 @@ import pygame
 
 from core import tools
 from core.components.locale import translator
-from core.components.menu import PopUpMenu
+from core.components.ui.popup import PopUpMenu
 from core.components.menu.interface import MenuItem
-from core.components.menu.menu import Menu
-from core.components.sprite import MenuSpriteGroup, SpriteGroup
+# from core.components.menu.menu import Menu
+# from core.components.sprite import MenuSpriteGroup, SpriteGroup
+from core.components.ui.menu import Menu
+from core.components.sprite import SpriteGroup
+from core.components.ui.layout import MenuLayout
+from core.components.ui.graphicbox import GraphicBox
+from core.components.ui.font import shadow_text
 from core.components.technique import Technique
-from core.components.ui.draw import GraphicBox
 
 # Create a logger for optional handling of debug messages.
 logger = logging.getLogger(__name__)
@@ -38,7 +42,7 @@ class MainCombatMenuState(PopUpMenu):
 
         for key, callback in menu_items_map:
             label = translator.translate(key).upper()
-            image = self.shadow_text(label)
+            image = shadow_text(self.font, label)
             yield MenuItem(image, label, None, callback)
 
     def run(self):
@@ -132,7 +136,7 @@ class MainCombatMenuState(PopUpMenu):
 
             # add techniques to the menu
             for tech in self.monster.moves:
-                image = self.shadow_text(tech.name)
+                image = shadow_text(self.font, tech.name)
                 item = MenuItem(image, None, None, tech)
                 menu.add(item)
 
@@ -175,7 +179,7 @@ class CombatTargetMenuState(Menu):
 
     def create_new_menu_items_group(self):
         # these groups will not automatically position the sprites
-        self.menu_items = MenuSpriteGroup()
+        self.menu_items = MenuLayout()
         self.menu_sprites = SpriteGroup()
 
     def startup(self, *args, **kwargs):
@@ -230,7 +234,7 @@ class CombatTargetMenuState(Menu):
 
                 yield item
 
-    def refresh_layout(self):
+    def _refresh_layout(self):
         """ Before refreshing the layout, determine the optimal target
 
         :return:
@@ -249,7 +253,7 @@ class CombatTargetMenuState(Menu):
                         return
 
         determine_target()
-        super(CombatTargetMenuState, self).refresh_layout()
+        super(CombatTargetMenuState, self)._refresh_layout()
 
     def on_menu_selection_change(self):
         """ Draw borders around sprites when selection changes
