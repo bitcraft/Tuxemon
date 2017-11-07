@@ -262,7 +262,7 @@ def load_font(filename, size):
     # the next line determines where fonts are stored
     filename = os.path.join('font', filename)
     filename = transform_resource_filename(filename)
-    size = min(prepare.MIN_FONT_SIZE, size)
+    size = max(prepare.MIN_FONT_SIZE, size)
     font_size = scale(size)
     return pygame.font.Font(filename, font_size)
 

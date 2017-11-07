@@ -40,7 +40,7 @@ class Layout(Widget):
     """
 
     def __repr__(self):
-        return "<Layout ({})>".format(len(self.children))
+        return "<{} ({})>".format(self.__class__.__name__, len(self.children))
 
 
 class MenuLayout(Layout):
@@ -191,38 +191,35 @@ class RelativeLayout(Layout):
         self.update_rect_from_parent()
         return rect.move(self.rect.topleft)
 
-    def draw(self, surface):
-        self.update_rect_from_parent()
-
-        self.rect = self.parent.rect
-
-        topleft = self.rect.topleft
-
-        spritedict = self.spritedict
-        surface_blit = surface.blit
-        dirty = self.lostsprites
-        self.lostsprites = []
-        dirty_append = dirty.append
-
-        for s in self.children:
-            if s.image is None:
-                continue
-
-            if not getattr(s, 'visible', True):
-                continue
-
-            r = spritedict[s]
-            newrect = surface_blit(s.image, s.rect.move(topleft))
-            if r:
-                if newrect.colliderect(r):
-                    dirty_append(newrect.union(r))
-                else:
-                    dirty_append(newrect)
-                    dirty_append(r)
-            else:
-                dirty_append(newrect)
-            spritedict[s] = newrect
-        return dirty
+    # def draw(self, surface):
+    #     self.update_rect_from_parent()
+    #
+    #     topleft = self.rect.topleft
+    #     spritedict = self.spritedict
+    #     surface_blit = surface.blit
+    #     dirty = self.lostsprites
+    #     self.lostsprites = []
+    #     dirty_append = dirty.append
+    #
+    #     for s in self.children:
+    #         if s.image is None:
+    #             continue
+    #
+    #         if not getattr(s, 'visible', True):
+    #             continue
+    #
+    #         r = spritedict[s]
+    #         newrect = surface_blit(s.image, s.rect.move(topleft))
+    #         if r:
+    #             if newrect.colliderect(r):
+    #                 dirty_append(newrect.union(r))
+    #             else:
+    #                 dirty_append(newrect)
+    #                 dirty_append(r)
+    #         else:
+    #             dirty_append(newrect)
+    #         spritedict[s] = newrect
+    #     return dirty
 
 
 class GridLayout(RelativeLayout, MenuLayout):
@@ -230,7 +227,6 @@ class GridLayout(RelativeLayout, MenuLayout):
     Can be configured to arrange the children widgets into a grid
     """
     orientation = 'horizontal'  # default, and only implemented
-    expand = True  # will fill all space of parent, if false, will be more compact
 
     def __init__(self, **kwargs):
         super(GridLayout, self).__init__(**kwargs)
@@ -273,8 +269,6 @@ class GridLayout(RelativeLayout, MenuLayout):
 
         items_per_column = math.ceil(len(self) / self.columns)
 
-        self.expand = False
-
         if self.expand:
             # fill available space
             line_spacing = self.line_spacing
@@ -290,3 +284,4 @@ class GridLayout(RelativeLayout, MenuLayout):
         for index, item in enumerate(self.children):
             oy, ox = divmod(index, self.columns)
             item.rect.topleft = 30 + ox * column_spacing, oy * line_spacing
+            item.rect2 = item.rect.move(self.rect.topleft)

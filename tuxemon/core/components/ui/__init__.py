@@ -42,10 +42,10 @@ def build_text_item(label, callback, icon=None):
     from .menu import MenuItem
     from .draw import shadow_text
     # WHITE
-    # bg = (192, 192, 192)
-    # fg = (245, 245, 245)
     bg = (192, 192, 192)
-    fg = (0, 0, 0)
+    fg = (245, 245, 245)
+    # bg = (192, 192, 192)
+    # fg = (0, 0, 0)
     font = tools.load_default_font()
     image = shadow_text(font, fg, bg, label)
     return MenuItem(image, label, None, callback)

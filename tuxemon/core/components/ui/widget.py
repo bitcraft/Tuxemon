@@ -50,7 +50,6 @@ class Widget(object):
     rect = None
 
     def __init__(self):
-        # self.rect = self.rect.copy()  # do not remove!
         self.inner_rect = None
         self.parent = None
         self.disabled = False
@@ -58,6 +57,8 @@ class Widget(object):
         self.animations = Group()
         self.padding = 0
         self.transparent = True
+        self.rect2 = None
+        self.expand = True  # will fill all space of parent, if false, will be more compact
         self._needs_refresh = True
         self._in_refresh = False
         self._anchors = dict()  # used to position the menu/state
@@ -197,7 +198,6 @@ class Widget(object):
 
     def update(self, time_delta):
         self.animations.update(time_delta)
-
         self.trigger_refresh()
 
         for child in list(self.children):
@@ -213,6 +213,10 @@ class Widget(object):
         :return: 
         """
         logger.debug("{} updating rect".format(self))
+
+        if self.rect2:
+            self.rect = self.rect2.copy()
+            return False
 
         if self.rect:
             old = self.rect.copy()
@@ -235,8 +239,6 @@ class Widget(object):
         else:
             if self.rect is None:
                 self.rect = Rect((0, 0), prepare.SCREEN_SIZE)
-                # self.rect.topleft = 0, 0
-                # self.rect.size = prepare.SCREEN_SIZE
 
         changed = not old == self.rect
 
@@ -319,6 +321,7 @@ class Widget(object):
         :rtype: None
         :returns: None
         """
+        self.update_rect_from_parent()
         self.check_refresh()
         self._draw(surface)
 
