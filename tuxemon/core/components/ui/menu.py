@@ -25,16 +25,13 @@
 #
 #
 import logging
-import time
 
 import pygame
 
 from core import tools
 from core.components.animation import remove_animations_of
 from core.components.menu.interface import MenuCursor
-from core.components.menu.interface import MenuItem
-from core.components.ui.font import shadow_text
-from core.components.ui.layout import GridLayout, RelativeLayout
+from core.components.ui.layout import GridLayout
 from core.components.ui.widget import Widget
 
 logger = logging.getLogger(__name__)
@@ -64,42 +61,23 @@ class Menu(Widget):
         super(Menu, self).__init__()
         self.selected_index = 0  # track which menu item is selected
         self.menu_select_sound = tools.load_sound(self.menu_select_sound_filename)
-        self.font = tools.load_default_font()
 
         # for keyboard input
         self.string_input = ''  # for holding keyboard input
         self._last_input = 0
 
-        self.menu_rect = None  # menu_items is a layout of stuff to select
+        # menu_rect is for tracking menu items out of bounds
+        self.menu_rect = None
+
+        # menu_items is a layout of selectable elements
         self.menu_items = GridLayout()
         self.menu_items.columns = self.columns
         self.add_widget(self.menu_items)
 
-        # menu_sprites is a layout of the cursor, and maybe other things later
-        self.menu_sprites = RelativeLayout()
-        self.add_widget(self.menu_sprites)
-
         # load the cursor
         image = tools.load_and_scale(self.cursor_filename)
-        self.arrow = MenuCursor(image)
-        self.menu_sprites.add_widget(self.arrow)
-
-    def build_text_item(self, label, callback, icon=None):
-        """ Create a menu item and add it to the menu
-
-        :param label: Some text
-        :param icon: pygame surface (not used yet)
-        :param callback: callback to use when selected
-        :return: Menu Item
-        """
-        # WHITE
-        # bg = (192, 192, 192)
-        # fg = (245, 245, 245)
-        bg = (192, 192, 192)
-        fg = (0, 0, 0)
-        image = shadow_text(self.font, fg, bg, label)
-        item = MenuItem(image, label, None, callback)
-        self.menu_items.add_widget(item)
+        self.cursor = MenuCursor(image)
+        self.add_widget(self.cursor)
 
     # INPUT BUFFER
     def add_input_buffer(self, char):
@@ -179,7 +157,7 @@ class Menu(Widget):
             self.menu_items.clear_widgets()
 
             for item in items:
-                self.add(item)
+                self.add_widget(item)
 
             number_items = len(self.menu_items)
             if self.menu_items and self.selected_index >= number_items:
@@ -190,8 +168,8 @@ class Menu(Widget):
 
         :returns: None
         """
-        if self.arrow not in self.menu_sprites:
-            self.menu_sprites.add_widget(self.arrow)
+        if self.cursor not in self.children:
+            self.add_widget(self.cursor)
             self.trigger_cursor_update(False)
             self.get_selected_item().in_focus = True
 
@@ -200,8 +178,8 @@ class Menu(Widget):
 
         :returns: None
         """
-        if self.arrow in self.menu_sprites:
-            self.menu_sprites.remove(self.arrow)
+        if self.cursor in self.children:
+            self.remove_widget(self.cursor)
             selected = self.get_selected_item()
             if selected is not None:
                 selected.in_focus = False
@@ -212,6 +190,10 @@ class Menu(Widget):
         :return:
         """
         # self.menu_items.expand = not self.shrink_to_items
+
+        if not self.in_focus:
+            self.hide_cursor()
+            return
 
         # check if we have items, but they are all disabled
         disabled = all(i.disabled for i in self.menu_items)
@@ -235,6 +217,8 @@ class Menu(Widget):
         """
         if event.type == pygame.KEYDOWN:
 
+            self.in_focus = True
+
             # check if we have items, but they are all disabled
             disabled = all(i.disabled for i in self.menu_items)
 
@@ -247,6 +231,11 @@ class Menu(Widget):
 
                 else:
                     index = self.menu_items.determine_cursor_movement(self.selected_index, event)
+                    if index == 6:
+                        parent = self.parent.parent
+                        parent.remove_widget(self.parent)
+                        parent.add_widget(self.parent)
+                        return
                     if not self.selected_index == index:
                         self.change_selection(index)
                         return
@@ -325,6 +314,10 @@ class Menu(Widget):
         :return: None
         """
         # TODO: unify the menu_rect attribute, or move menu to own widget
+        if self.menu_rect is None:
+            self.menu_rect = self.menu_items.calc_bounding_rect()
+            return False
+
         menu_rect = self.menu_items.calc_bounding_rect()
 
         # get the selected item, if any
@@ -339,6 +332,7 @@ class Menu(Widget):
         diff = tools.calc_scroll_thing(selected_rect, menu_rect, self.rect)
 
         if diff:
+            print(diff)
             remove_animations_of(menu_rect, self.animations)
             self.animate(self.menu_rect, duration=.25, relative=True, **diff)
 
@@ -369,10 +363,10 @@ class Menu(Widget):
         x -= tools.scale(2)
 
         if animate:
-            self.remove_animations_of(self.arrow.rect)
-            return self.animate(self.arrow.rect, right=x, centery=y, duration=self.cursor_move_duration)
+            self.remove_animations_of(self.cursor.rect2)
+            return self.animate(self.cursor.rect2, right=x, centery=y, duration=self.cursor_move_duration)
         else:
-            self.arrow.rect.midright = x, y
+            self.cursor.rect2.midright = x, y
             return None
 
     def get_selected_item(self):
@@ -386,6 +380,7 @@ class Menu(Widget):
             assert item is not None
             return item
         except IndexError:
+            print(self.menu_items, self.selected_index)
             raise RuntimeError("invalid selected index?")
 
     # ============================================================================

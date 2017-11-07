@@ -40,10 +40,10 @@ class HorizontalBar(object):
         :returns:
         """
         inner = rect.copy()
-        inner.top += tools.scale(2)     # top is 2 pixels from top of the raw image
+        inner.top += tools.scale(2)  # top is 2 pixels from top of the raw image
         inner.height -= tools.scale(4)  # height is 4 pixels less than the height of the original
-        inner.left += tools.scale(2)    # left side of bar is 2 pixels from the left of the original
-        inner.width -= tools.scale(4)   # width is 4 pixels less than the width of the original
+        inner.left += tools.scale(2)  # left side of bar is 2 pixels from the left of the original
+        inner.width -= tools.scale(4)  # width is 4 pixels less than the width of the original
         return inner
 
     def draw(self, surface, rect):
@@ -91,9 +91,6 @@ class MenuItem(Widget):
         self.description = description
         self.game_object = game_object
 
-        self.enabled = True
-        self._in_focus = False
-
     def __repr__(self):
         return "<MenuItem: {}>".format(self.label)
 
@@ -105,20 +102,13 @@ class MenuItem(Widget):
         """
         surface.blit(self.image, self.rect)
 
-    def toggle_focus(self):
-        self._in_focus = not self._in_focus
-
-    @property
-    def in_focus(self):
-        return self._in_focus
-
-    @in_focus.setter
-    def in_focus(self, value):
-        self._in_focus = bool(value)
-
 
 class MenuCursor(Widget):
     def __init__(self, image):
         super(MenuCursor, self).__init__()
         self.image = image
         self.rect = image.get_rect()
+        self.rect2 = image.get_rect()
+
+    def _draw(self, surface):
+        surface.blit(self.image, self.rect)

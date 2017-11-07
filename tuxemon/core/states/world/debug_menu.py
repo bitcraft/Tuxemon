@@ -33,16 +33,14 @@ import logging
 from functools import partial
 from os.path import join, basename
 
-import pygame
-
 from core import tools
-from core.state import State
 from core.components.ui import build_text_item
 from core.components.ui.graphicbox import GraphicBox
-from core.components.ui.layout import Layout, GridLayout
+from core.components.ui.layout import Layout
+from core.components.ui.menu import Menu
 from core.components.ui.textarea import TextArea
 from core.components.ui.textinput import TextInput
-
+from core.state import State
 # Create a logger for optional handling of debug messages.
 from core.tools import scale
 
@@ -53,7 +51,7 @@ class DebugMenuState(Layout, State):
     """
     Menu for the world state
     """
-    draw_borders = False
+    borders_filename = "gfx/dialog-borders01.png"
     background_filename = "gfx/backgrounds/autumn.png"
     animate_contents = True
     empty_box = "< map name >"
@@ -61,42 +59,37 @@ class DebugMenuState(Layout, State):
     def startup(self, *args, **kwargs):
         super(DebugMenuState, self).startup(*args, **kwargs)
 
-        # load and scale the background
-        background = None
-        if self.background_filename:
-            background = tools.load_image(self.background_filename)
+        # load and scale the background/borders
+        background = tools.load_image(self.background_filename)
+        # border = tools.load_and_scale(self.borders_filename)
 
-        # load and scale the menu borders
-        border = None
-        if self.draw_borders:
-            border = tools.load_and_scale(self.borders_filename)
-
-        # set the helper to draw the background
-        self.window = GraphicBox(border, background, (12, 222, 222))
-        self.window.rect = pygame.Rect(0, 0, 700, 700)
-        self.add_widget(self.window)
-
-        # widget to show map names
-        self.filenames = GridLayout()
-        self.filenames.line_spacing = scale(7)
-        self.filenames.rect2 = tools.scaled_rect(115, 8, 150, 130)
-        self.add_widget(self.filenames)
-
-        # text widget to show input
-        font = tools.load_default_font()
-        self.font_color = (255, 255, 255)
-        self.text_area = TextArea(font, self.font_color, (96, 96, 96))
-        self.text_area.animated = False
-        self.text_area.rect = tools.scaled_rect(20, 23, 80, 100)
-        self.text_area.text = self.empty_box
-        self.add_widget(self.text_area)
+        # set the widget to draw the background
+        window = GraphicBox(None, background, (12, 222, 222))
+        self.add_widget(window)
 
         # widget for getting input
         self.key_input = TextInput()
         self.key_input.rect2 = tools.scaled_rect(7, 40, 100, 100)
         self.add_widget(self.key_input)
 
+        # text widget to show input
+        font = tools.load_default_font()
+        font_color = (255, 255, 255)
+        self.text_area = TextArea(font, font_color, (96, 96, 96))
+        self.text_area.animated = False
+        self.text_area.rect = tools.scaled_rect(20, 23, 80, 100)
+        self.text_area.text = self.empty_box
+        self.add_widget(self.text_area)
+
+        # widget to show map names
+        self.filenames = Menu()
+        self.filenames.menu_items.line_spacing = scale(7)
+        self.filenames.rect2 = tools.scaled_rect(115, 8, 150, 130)
         self.update_filename_list()
+        self.add_widget(self.filenames)
+
+        # self.children.remove(self.filenames)
+        # self.children.insert(1, self.filenames)
 
     def scan_maps(self):
         """ Scan the resources folder for maps.  Return a sorted list of paths.
@@ -107,12 +100,12 @@ class DebugMenuState(Layout, State):
         return sorted(glob.glob(join(folder, '*.tmx')))
 
     def update_filename_list(self):
+        self.filenames.menu_items.clear_widgets()
         change_map = self.game.get_state_name('WorldState').change_map
-        self.filenames.clear_widgets()
+        add_widget = self.filenames.menu_items.add_widget
         for path in self.scan_maps():
             map_name = basename(path)[:-4]
             text = self.key_input.string_input
-            # if input is empty, add all the maps. otherwise filter by the input string
             if text == '' or text in map_name.upper():
                 item = build_text_item(map_name, partial(change_map, path))
-                self.filenames.add_widget(item)
+                add_widget(item)

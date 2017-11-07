@@ -46,12 +46,15 @@ class Widget(object):
 
     * Widgets can contain other widgets
     * Widgets can define the layout of their children, but not themselves
+
+    :ivartype parent: Widget
     """
     rect = None
 
     def __init__(self):
+        self.enabled = True
         self.inner_rect = None
-        self.parent = None
+        self.parent = None  # type: Widget
         self.disabled = False
         self.children = list()
         self.animations = Group()
@@ -59,6 +62,7 @@ class Widget(object):
         self.transparent = True
         self.rect2 = None
         self.expand = True  # will fill all space of parent, if false, will be more compact
+        self._in_focus = False
         self._needs_refresh = True
         self._in_refresh = False
         self._anchors = dict()  # used to position the menu/state
@@ -147,9 +151,8 @@ class Widget(object):
         is returned, then it will be passed down to other states.
 
         :param event: A pygame key event from pygame.event.get()
-        :type event: PyGame Event
-        :returns: Pygame Event or None
-        :rtype: pygame Event
+        :type event: pygame.event.Event
+        :rtype: pygame.event.Event
 
         """
         for child in list(self.children):
@@ -293,7 +296,7 @@ class Widget(object):
     def refresh_layout(self):
         """ Force the layout to refresh self and children
         
-        Do not override.
+        Do not override.  Use _refresh_layout instead.
         
         :return: 
         """
@@ -313,10 +316,10 @@ class Widget(object):
     def draw(self, surface):
         """ Cause this and all children to draw themselves to the surface
 
-        The actual method that draws is Widget._draw
+        Do not override.  Use _draw instead.
 
         :param surface: Surface to draw on
-        :type surface: pygame.Surface
+        :type surface: pygame.surface.Surface
 
         :rtype: None
         :returns: None
@@ -475,3 +478,14 @@ class Widget(object):
             del self._anchors[attribute]
         else:
             self._anchors[attribute] = value
+
+    def toggle_focus(self):
+        self._in_focus = not self._in_focus
+
+    @property
+    def in_focus(self):
+        return self._in_focus
+
+    @in_focus.setter
+    def in_focus(self, value):
+        self._in_focus = bool(value)

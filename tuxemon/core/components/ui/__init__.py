@@ -29,6 +29,8 @@
 #
 from __future__ import absolute_import
 
+from core.components.menu.interface import MenuItem
+
 
 def build_text_item(label, callback, icon=None):
     """ Create a menu item and add it to the menu
@@ -39,7 +41,6 @@ def build_text_item(label, callback, icon=None):
     :return: Menu Item
     """
     from core import tools
-    from .menu import MenuItem
     from .draw import shadow_text
     # WHITE
     bg = (192, 192, 192)

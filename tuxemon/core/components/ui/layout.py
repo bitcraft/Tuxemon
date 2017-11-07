@@ -164,6 +164,17 @@ class MenuLayout(Layout):
 
                 seeking_index = not self.children[index].enabled
 
+        # new_row, new_col = divmod(index, self.columns)
+        # print(col, new_col)
+        #
+        # # right edge
+        # if new_col == 0 and col == self.columns - 1:
+        #     self.parent.focus('left')
+        #
+        # # left edge
+        # if new_col == self.columns - 1 and col == 0 or index == len(self.children) - 1:
+        #     self.parent.focus('right')
+
         return index
 
 
@@ -191,35 +202,35 @@ class RelativeLayout(Layout):
         self.update_rect_from_parent()
         return rect.move(self.rect.topleft)
 
-    # def draw(self, surface):
-    #     self.update_rect_from_parent()
-    #
-    #     topleft = self.rect.topleft
-    #     spritedict = self.spritedict
-    #     surface_blit = surface.blit
-    #     dirty = self.lostsprites
-    #     self.lostsprites = []
-    #     dirty_append = dirty.append
-    #
-    #     for s in self.children:
-    #         if s.image is None:
-    #             continue
-    #
-    #         if not getattr(s, 'visible', True):
-    #             continue
-    #
-    #         r = spritedict[s]
-    #         newrect = surface_blit(s.image, s.rect.move(topleft))
-    #         if r:
-    #             if newrect.colliderect(r):
-    #                 dirty_append(newrect.union(r))
-    #             else:
-    #                 dirty_append(newrect)
-    #                 dirty_append(r)
-    #         else:
-    #             dirty_append(newrect)
-    #         spritedict[s] = newrect
-    #     return dirty
+        # def draw(self, surface):
+        #     self.update_rect_from_parent()
+        #
+        #     topleft = self.rect.topleft
+        #     spritedict = self.spritedict
+        #     surface_blit = surface.blit
+        #     dirty = self.lostsprites
+        #     self.lostsprites = []
+        #     dirty_append = dirty.append
+        #
+        #     for s in self.children:
+        #         if s.image is None:
+        #             continue
+        #
+        #         if not getattr(s, 'visible', True):
+        #             continue
+        #
+        #         r = spritedict[s]
+        #         newrect = surface_blit(s.image, s.rect.move(topleft))
+        #         if r:
+        #             if newrect.colliderect(r):
+        #                 dirty_append(newrect.union(r))
+        #             else:
+        #                 dirty_append(newrect)
+        #                 dirty_append(r)
+        #         else:
+        #             dirty_append(newrect)
+        #         spritedict[s] = newrect
+        #     return dirty
 
 
 class GridLayout(RelativeLayout, MenuLayout):
