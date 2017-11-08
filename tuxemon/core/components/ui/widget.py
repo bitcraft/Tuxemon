@@ -53,21 +53,23 @@ class Widget(object):
     rect = None
 
     def __init__(self):
+        self.parent = None  # type: Widget
         self.enabled = True
         self.inner_rect = None
-        self.parent = None  # type: Widget
         self.disabled = False
-        self.children = list()
+        self.children = list()  # type: List[Widget]
         self.animations = Group()
         self.padding = 0
         self.transparent = True
-        self.offset = Vector2(0, 0)
-        self.rect2 = None  # type: pygame.rect.Rect
         self.expand = True  # will fill all space of parent, if false, will be more compact
         self._in_focus = False
-        self._needs_refresh = True
         self._in_refresh = False
         self._anchors = dict()  # used to position the menu/state
+        self._needs_refresh = True
+
+        # the offset is always set by the parent.  it is how
+        # layouts position their children
+        self.offset = Rect(0, 0, 0, 0)
 
     def __repr__(self):
         return "<Widget: {}>".format(self.__class__.__name__)
@@ -205,7 +207,7 @@ class Widget(object):
             child.update(time_delta)
 
     def update_rect_from_parent(self):
-        """ Basically, fit this widget's rect to the inner rect of the parent
+        """
         
         If the rect is not defined, a default will be used.
         
@@ -214,10 +216,6 @@ class Widget(object):
         :return: 
         """
         logger.debug("{} updating rect".format(self))
-
-        if self.rect2:
-            self.rect = self.rect2.copy()
-            return False
 
         if self.rect:
             old = self.rect.copy()

@@ -108,7 +108,6 @@ class MenuCursor(Widget):
         super(MenuCursor, self).__init__()
         self.image = image
         self.rect = image.get_rect()
-        self.rect2 = image.get_rect()
 
     def _draw(self, surface):
         surface.blit(self.image, self.rect)

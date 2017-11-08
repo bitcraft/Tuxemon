@@ -83,7 +83,7 @@ class DebugMenuState(Layout, State):
 
         # widget for getting input
         self.key_input = TextInput()
-        self.key_input.rect2 = tools.scaled_rect(7, 40, 100, 100)
+        self.key_input.offset = tools.scaled_rect(7, 40, 100, 100)
         self.add_widget(self.key_input)
 
         # text widget to show input
@@ -98,7 +98,7 @@ class DebugMenuState(Layout, State):
         # widget to show map names
         self.filenames = Menu()
         self.filenames.menu_items.line_spacing = scale(30)
-        self.filenames.rect2 = tools.scaled_rect(115, 8, 150, 130)
+        self.filenames.offset = tools.scaled_rect(115, 8, 150, 130)
         self.update_filename_list()
         self.add_widget(self.filenames)
 

@@ -259,18 +259,18 @@ class GridLayout(RelativeLayout, MenuLayout):
 
         :returns: None
         """
-        # TODO: make configuration option
-        margin = scale(2)
-        # max_width = 0
+        max_width = 0
         max_height = 0
         for item in self.children:
-            # max_width = max(max_width, item.rect.width)
+            max_width = max(max_width, item.rect.width)
             max_height = max(max_height, item.rect.height)
 
-        spacing = max_height + margin
+        # margin = scale(2)
+        # spacing = max_height + margin
 
         self.update_rect_from_parent()
         width, height = self.rect.size
+        column_spacing = width // self.columns
 
         items_per_column = math.ceil(len(self) / self.columns)
 
@@ -282,11 +282,9 @@ class GridLayout(RelativeLayout, MenuLayout):
         else:
             line_spacing = int(max_height * 1.2)
 
-        column_spacing = width // self.columns
-
         # TODO: pagination API
 
         for index, item in enumerate(self.children):
             oy, ox = divmod(index, self.columns)
             item.rect.topleft = 30 + ox * column_spacing, oy * line_spacing
-            item.rect2 = item.rect.move(self.rect.topleft).move(self.offset)
+            item.rect2 = item.rect.move(self.rect.topleft).move(self.offset.topleft)

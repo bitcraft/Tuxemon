@@ -322,10 +322,10 @@ class Menu(Widget):
 
         # determine if the contents need to be scrolled within its bounds
         diff = tools.calc_scroll_thing(selected_rect, bounding, self.rect)
-        print (self.rect, self.rect2, selected_rect, bounding)
+        print (diff, selected_rect, bounding, self.offset)
 
         if diff:
-            remove_animations_of(self.rect2, self.animations)
+            remove_animations_of(self.offset, self.animations)
             self.animate(self.offset, duration=.25, relative=True, **diff)
 
     def search_items(self, game_object):
@@ -355,10 +355,10 @@ class Menu(Widget):
         x -= tools.scale(2)
 
         if animate:
-            self.remove_animations_of(self.cursor.rect2)
-            return self.animate(self.cursor.rect2, right=x, centery=y, duration=self.cursor_move_duration)
+            self.remove_animations_of(self.cursor.offset)
+            return self.animate(self.cursor.offset, right=x, centery=y, duration=self.cursor_move_duration)
         else:
-            self.cursor.rect2.midright = x, y
+            self.cursor.offset.midright = x, y
             return None
 
     def get_selected_item(self):
