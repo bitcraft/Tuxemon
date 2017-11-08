@@ -31,7 +31,6 @@ from __future__ import print_function
 import logging
 
 from core import prepare
-from core.components.euclid import Vector2
 from core.components.animation import Animation
 from core.components.animation import Task
 from core.components.animation import remove_animations_of
@@ -47,29 +46,28 @@ class Widget(object):
 
     * Widgets can contain other widgets
     * Widgets can define the layout of their children, but not themselves
+    * Widgets can draw anywhere, but should stay in bounds
 
     :ivartype parent: Widget
     """
-    rect = None
 
     def __init__(self):
         self.parent = None  # type: Widget
         self.enabled = True
-        self.inner_rect = None
         self.disabled = False
+        self.transparent = True
+        self.expand = True  # fill all space of parent
+        self.padding = 0  # used to compensate for window borders
+        self.bounds = Rect(0, 0, 0, 0)  # set by parent where drawing should happen
+        self.bounds = None
+        self.rect = Rect(0, 0, 0, 0)  # dimensions of content
+        self.inner = None  # where children are drawn
         self.children = list()  # type: List[Widget]
         self.animations = Group()
-        self.padding = 0
-        self.transparent = True
-        self.expand = True  # will fill all space of parent, if false, will be more compact
         self._in_focus = False
         self._in_refresh = False
         self._anchors = dict()  # used to position the menu/state
         self._needs_refresh = True
-
-        # the offset is always set by the parent.  it is how
-        # layouts position their children
-        self.offset = Rect(0, 0, 0, 0)
 
     def __repr__(self):
         return "<Widget: {}>".format(self.__class__.__name__)
@@ -194,7 +192,7 @@ class Widget(object):
     def remove_animations_of(self, target):
         """ Given and object, remove any animations that it is used with
 
-        :param target: any
+        :type target: any
         :returns: None
         """
         remove_animations_of(target, self.animations)
@@ -206,10 +204,8 @@ class Widget(object):
         for child in list(self.children):
             child.update(time_delta)
 
-    def update_rect_from_parent(self):
-        """
-        
-        If the rect is not defined, a default will be used.
+    def update_bounds(self):
+        """ Adjust own bounds from parent
         
         WIP
         
@@ -217,34 +213,34 @@ class Widget(object):
         """
         logger.debug("{} updating rect".format(self))
 
-        if self.rect:
-            old = self.rect.copy()
-        else:
-            old = None
-
+        # if has a parent, check the parent
         if self.parent:
-            # self.parent.update_rect_from_parent()
-            # set our rect to the rect of the parent
-            # cannot copy object b/c animations may be modifying the rect
-            if self.rect is None:
-                self.rect = self.parent.inner_rect.copy()
+            old = self.bounds.copy() if self.bounds else None
+
+            if self.bounds is None:
+                # set our rect to the rect of the parent
+                self.bounds = self.parent.calc_internal_rect()
             else:
-                inner = self.parent.inner_rect
-                self.rect.x = inner.x
-                self.rect.y = inner.y
-                self.rect.w = inner.w
-                self.rect.h = inner.h
+                # cannot copy object b/c animations may be modifying the rect
+                inner = self.parent.calc_internal_rect()
+                # self.bounds.x = inner.x
+                # self.bounds.y = inner.y
+                # self.bounds.w = inner.w
+                # self.bounds.h = inner.h
 
+            changed = not old == self.bounds
+
+        # no parent, so expand to fill the screen
         else:
-            if self.rect is None:
-                self.rect = Rect((0, 0), prepare.SCREEN_SIZE)
-
-        changed = not old == self.rect
+            if self.bounds is None:
+                self.bounds = Rect((0, 0), prepare.SCREEN_SIZE)
+                changed = True
+            else:
+                changed = False
 
         if changed:
-            logger.debug("RECT, {} {} {}".format(self, self.rect, self.inner_rect))
+            logger.debug("RECT, {} {} {}".format(self, self.bounds, self.rect))
             logger.debug("{} trigger refresh update from parent".format(self))
-            self.inner_rect = self._calc_internal_rect()
             self.trigger_refresh()
 
         return changed
@@ -252,7 +248,7 @@ class Widget(object):
     def trigger_refresh(self):
         """ Call to set a refresh at next opportunity.
         
-        Best to call this after the widget's position changes.
+        Best to call this after the widget's position or bounds changes.
         
         :return: None
         """
@@ -270,14 +266,13 @@ class Widget(object):
         """
         if self._needs_refresh and not self._in_refresh:
 
-            if self.rect is None:
-                self.update_rect_from_parent()
+            if self.bounds is None:
+                self.update_bounds()
 
             # prevent recursion if refresh is checked during refresh
             self._in_refresh = True
 
             self._refresh_layout()
-            self.inner_rect = self._calc_internal_rect()
 
             for child in self.children:
                 child.trigger_refresh()
@@ -303,11 +298,11 @@ class Widget(object):
             child.refresh_layout()
 
     def _refresh_layout(self):
-        """ Override if this widget does anything fancy with it's own rect or childrens'
+        """ Override if this widget does anything fancy with it's own rect or children
 
         :return: None
         """
-        pass
+        self.rect.topleft = self.bounds.topleft
 
     def draw(self, surface):
         """ Cause this and all children to draw themselves to the surface
@@ -320,7 +315,7 @@ class Widget(object):
         :rtype: None
         :returns: None
         """
-        self.update_rect_from_parent()
+        self.update_bounds()
         self.check_refresh()
         self._draw(surface)
 
@@ -346,7 +341,11 @@ class Widget(object):
         return self._calc_internal_rect()
 
     def _calc_internal_rect(self):
-        return self.rect.inflate(-self.padding, -self.padding)
+        """
+
+        :rtype: pygame.Rect
+        """
+        return self.bounds.inflate(-self.padding, -self.padding)
 
     def calc_bounding_rect(self):
         """ Return a rect that contains this and all children
@@ -367,15 +366,12 @@ class Widget(object):
         """ Calculate the area in the game window where menu is shown
 
         This value is the __desired__ location and size, and should not change
-        over the lifetime of the menu.  It is used to generate animations
-        to open the menu.
-
-        The rect represents the size of the menu after all items are added.
+        over the lifetime of the widget.  It is used to generate animations.
 
         :rtype: pygame.Rect
         """
-        if self.rect is None:
-            self.update_rect_from_parent()
+        if self.bounds is None:
+            self.update_bounds()
 
         original = self.rect.copy()
         self.refresh_layout()
@@ -387,8 +383,9 @@ class Widget(object):
     def add_widget(self, widget, index=None):
         """ Add a widget to this window as a child
 
-        :param widget:
-        :param index:
+        :type widget: Widget
+        :type index: int
+
         :return:
         """
         if widget.parent:
@@ -404,17 +401,18 @@ class Widget(object):
         else:
             self.children.insert(index, widget)
 
-        logger.debug("{} trigger refresh adding_widget".format(self))
+        logger.debug("{} adding widget".format(self))
         self.trigger_refresh()
 
     def remove_widget(self, widget):
         """ Remove widget from this one
 
-        :param widget:
+        :type widget: Widget
+
         :return:
         """
         self.children.remove(widget)
-        logger.debug("{} trigger refresh removing_widget".format(self))
+        logger.debug("{} removing widget".format(self))
         self.trigger_refresh()
         widget.parent = None
 
@@ -425,14 +423,6 @@ class Widget(object):
         """
         for widget in list(self.children):
             self.remove_widget(widget)
-
-    def to_relative(self, x, y):
-        """ Transform the coords to relative coordinates
-
-        :return: int, int
-        """
-        xx, yy = self.parent.rect.topleft
-        return x + xx, y + yy
 
     def position_rect(self):
         """ Reposition rect taking in account the anchors

@@ -30,31 +30,31 @@ class HorizontalBar(object):
         image = tools.load_and_scale(self.border_filename)
         HorizontalBar.border = GraphicBox(image)
 
-    @staticmethod
-    def calc_inner_rect(rect):
-        """ Calculate the inner rect to draw fg_color that fills bar
-            The values here are calculated based on game scale and
-            the content of the border image file.
+        # @staticmethod
+        # def calc_inner_rect(rect):
+        #     """ Calculate the inner rect to draw fg_color that fills bar
+        #         The values here are calculated based on game scale and
+        #         the content of the border image file.
+        #
+        #     :param rect:
+        #     :returns:
+        #     """
+        #     inner = rect.copy()
+        #     inner.top += tools.scale(2)  # top is 2 pixels from top of the raw image
+        #     inner.height -= tools.scale(4)  # height is 4 pixels less than the height of the original
+        #     inner.left += tools.scale(2)  # left side of bar is 2 pixels from the left of the original
+        #     inner.width -= tools.scale(4)  # width is 4 pixels less than the width of the original
+        #     return inner
 
-        :param rect:
-        :returns:
-        """
-        inner = rect.copy()
-        inner.top += tools.scale(2)  # top is 2 pixels from top of the raw image
-        inner.height -= tools.scale(4)  # height is 4 pixels less than the height of the original
-        inner.left += tools.scale(2)  # left side of bar is 2 pixels from the left of the original
-        inner.width -= tools.scale(4)  # width is 4 pixels less than the width of the original
-        return inner
-
-    def draw(self, surface, rect):
-        inner = self.calc_inner_rect(rect)
-        pygame.draw.rect(surface, self.bg_color, inner)
-        if self.value > 0:
-            left = inner.left
-            inner.width *= self.value
-            inner.left = left
-            pygame.draw.rect(surface, self.fg_color, inner)
-        self.border.draw(surface, rect)
+        # def draw(self, surface, rect):
+        #     inner = self.calc_inner_rect(rect)
+        #     pygame.draw.rect(surface, self.bg_color, inner)
+        #     if self.value > 0:
+        #         left = inner.left
+        #         inner.width *= self.value
+        #         inner.left = left
+        #         pygame.draw.rect(surface, self.fg_color, inner)
+        #     self.border.draw(surface, rect)
 
 
 class HpBar(HorizontalBar):
@@ -64,35 +64,28 @@ class HpBar(HorizontalBar):
     fg_color = 10, 240, 25
     bg_color = 245, 10, 25
 
-    @staticmethod
-    def calc_inner_rect(rect):
-        """ Calculate the inner rect to draw fg_color that fills bar
-            The values here are calculated based on game scale and
-            the content of the border image file.
+    # @staticmethod
+    # def calc_inner_rect(rect):
+    #     """ Calculate the inner rect to draw fg_color that fills bar
+    #         The values here are calculated based on game scale and
+    #         the content of the border image file.
+    #
+    #     :param rect:
+    #     :returns:
+    #     """
+    #     inner = rect.copy()
+    #     inner.top += tools.scale(2)
+    #     inner.height -= tools.scale(4)
+    #     inner.left += tools.scale(9)
+    #     inner.width -= tools.scale(11)
+    #     return inner
 
-        :param rect:
-        :returns:
-        """
-        inner = rect.copy()
-        inner.top += tools.scale(2)
-        inner.height -= tools.scale(4)
-        inner.left += tools.scale(9)
-        inner.width -= tools.scale(11)
-        return inner
 
-
-class MenuItem(Widget):
-    def __init__(self, image, label, description, game_object):
-        super(MenuItem, self).__init__()
+class ImageWidget(Widget):
+    def __init__(self, image):
+        super(ImageWidget, self).__init__()
         self.image = image
-        if image:
-            self.rect = image.get_rect()
-        self.label = label
-        self.description = description
-        self.game_object = game_object
-
-    def __repr__(self):
-        return "<MenuItem: {}>".format(self.label)
+        self.rect = image.get_rect()
 
     def _draw(self, surface):
         """
@@ -103,11 +96,12 @@ class MenuItem(Widget):
         surface.blit(self.image, self.rect)
 
 
-class MenuCursor(Widget):
-    def __init__(self, image):
-        super(MenuCursor, self).__init__()
-        self.image = image
-        self.rect = image.get_rect()
+class MenuItem(ImageWidget):
+    def __init__(self, image, label, description, game_object):
+        super(MenuItem, self).__init__(image)
+        self.label = label
+        self.description = description
+        self.game_object = game_object
 
-    def _draw(self, surface):
-        surface.blit(self.image, self.rect)
+    def __repr__(self):
+        return "<MenuItem: {}>".format(self.label)

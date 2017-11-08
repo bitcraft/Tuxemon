@@ -36,7 +36,7 @@ from core.tools import scale
 
 class Layout(Widget):
     """
-    Layouts contain widgets and position them. ]
+    Layouts contain widgets and position them.
     """
 
     def __repr__(self):
@@ -199,7 +199,7 @@ class RelativeLayout(Layout):
         self.spritedict[widget] = self._init_rect
 
     def calc_absolute_rect(self, rect):
-        self.update_rect_from_parent()
+        self.update_bounds()
         return rect.move(self.rect.topleft)
 
         # def draw(self, surface):
@@ -250,8 +250,9 @@ class GridLayout(RelativeLayout, MenuLayout):
 
     @columns.setter
     def columns(self, value):
-        self._columns = value
-        self._needs_arrange = True
+        if not value == self._columns:
+            self._columns = value
+            self.trigger_refresh()
 
     def _refresh_layout(self):
         """ Iterate through menu items and position them in the menu
@@ -265,13 +266,13 @@ class GridLayout(RelativeLayout, MenuLayout):
             max_width = max(max_width, item.rect.width)
             max_height = max(max_height, item.rect.height)
 
-        # margin = scale(2)
-        # spacing = max_height + margin
+        # TODO: do not hardcode
+        cursor_width = scale(7)
 
-        self.update_rect_from_parent()
-        width, height = self.rect.size
+        # self.update_bounds()
+        width, height = self.bounds.size
+        width -= cursor_width
         column_spacing = width // self.columns
-
         items_per_column = math.ceil(len(self) / self.columns)
 
         # fill available space
@@ -282,9 +283,12 @@ class GridLayout(RelativeLayout, MenuLayout):
         else:
             line_spacing = int(max_height * 1.2)
 
-        # TODO: pagination API
+        # use rect, not bounds, or internal
+        anchor_x, anchor_y = self.rect.topleft
 
+        cell_size = column_spacing, line_spacing
         for index, item in enumerate(self.children):
             oy, ox = divmod(index, self.columns)
-            item.rect.topleft = 30 + ox * column_spacing, oy * line_spacing
-            item.rect2 = item.rect.move(self.rect.topleft).move(self.offset.topleft)
+            ox, oy = cursor_width + ox * column_spacing, oy * line_spacing
+            topleft = anchor_x + ox, anchor_y + oy
+            item.bounds = pygame.Rect(topleft, cell_size)

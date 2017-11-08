@@ -58,28 +58,30 @@ axis_rect_edge_map = {"y": {"top", "bottom"}, "x": {"left", "right"}}
 _font_cache = dict()
 
 
-def calc_scroll_thing(rect, group, bounds):
+def calc_scroll_thing(outside_rect, bounding_rect, bounds):
     """ Very poorly named.  See description.
 
-    Given a rect, group rect and bounding box, return a dictionary
+    Given an outside_rect, bounding rect and boundaries, return a dictionary
     that describes the movement along any axis that will cause the
-    rect to be contained fully inside the bounds.
+    outside_rect to be contained fully inside the bounding_rect.
 
-    The group is used to determine valid axes to move along.
+    The bounds is used to determine valid axes to move the bounding_rect.
 
-    :type rect: pygame.Rect
-    :type group: pygame.Rect
+    :type outside_rect: pygame.Rect
+    :type bounding_rect: pygame.Rect
     :type bounds: pygame.Rect
 
     :rtype: dict
     """
     # get a list of axes that are allowed to scroll
-    scroll_axes = calc_scroll_freedom(group, bounds)
+    scroll_axes = calc_scroll_freedom(bounding_rect, bounds)
+
+    print(scroll_axes)
 
     # only calculate changes if the menu is able to scroll
     if scroll_axes:
         # get which quadrant the selected item is in in relation to the screen
-        quadrants = calc_quadrant(rect, bounds)
+        quadrants = calc_quadrant(outside_rect, bounds)
 
         diff = dict()
         for axis in scroll_axes:
@@ -87,7 +89,7 @@ def calc_scroll_thing(rect, group, bounds):
             # then determine the distance needed to move the scrollable
             # region so that the edges match and rect is contained in bounds
             d = axis_rect_edge_map[axis].intersection(quadrants).pop()
-            diff[d] = getattr(bounds, d) - getattr(rect, d)
+            diff[d] = getattr(bounds, d) - getattr(outside_rect, d)
 
         return diff
 

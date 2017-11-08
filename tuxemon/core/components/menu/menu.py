@@ -1,3 +1,29 @@
+# -*- coding: utf-8 -*-
+#
+# Tuxemon
+# Copyright (C) 2014, William Edwards <shadowapex@gmail.com>,
+#                     Benjamin Bean <superman2k5@gmail.com>
+#
+# This file is part of Tuxemon.
+#
+# Tuxemon is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Tuxemon is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Tuxemon.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contributor(s):
+#
+# Leif Theden <leif.theden@gmail.com>
+#
+#
 from __future__ import division
 from __future__ import print_function
 
@@ -8,7 +34,7 @@ from functools import partial
 import pygame
 
 from core import prepare, tools
-from core.components.menu.interface import MenuCursor, MenuItem
+from core.components.menu.interface import MenuCursor, MenuItem, ImageWidget
 from core.components.sprite import RelativeGroup, VisualSpriteList
 from core.components.ui.graphicbox import GraphicBox
 from core.components.ui.textarea import TextArea
@@ -284,7 +310,7 @@ class Menu2(Widget):
 
         # handle the arrow cursor
         image = tools.load_and_scale(self.cursor_filename)
-        self.arrow = MenuCursor(image)
+        self.arrow = ImageWidget(image)
 
     def show_cursor(self):
         """ Show the cursor that indicates the selected object
@@ -398,14 +424,14 @@ class Menu2(Widget):
         self.font_color = color
         self.font = pygame.font.Font(font, self.font_size)
 
-    def calc_internal_rect(self):
-        """ Calculate the area inside the borders, if any.
-        If no borders are present, a copy of the menu rect will be returned
-
-        :returns: Rect representing space inside borders, if any
-        :rtype: pygame.Rect
-        """
-        return self.window.calc_inner_rect(self.rect)
+    # def calc_internal_rect(self):
+    #     """ Calculate the area inside the borders, if any.
+    #     If no borders are present, a copy of the menu rect will be returned
+    #
+    #     :returns: Rect representing space inside borders, if any
+    #     :rtype: pygame.Rect
+    #     """
+    #     return self.window.calc_inner_rect(self.rect)
 
     def process_event(self, event):
         """ Process pygame input events

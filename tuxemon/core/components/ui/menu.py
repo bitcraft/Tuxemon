@@ -30,7 +30,7 @@ import pygame
 
 from core import tools
 from core.components.animation import remove_animations_of
-from core.components.menu.interface import MenuCursor
+from core.components.menu.interface import ImageWidget
 from core.components.ui.layout import GridLayout
 from core.components.ui.widget import Widget
 
@@ -73,7 +73,7 @@ class Menu(Widget):
 
         # load the cursor
         image = tools.load_and_scale(self.cursor_filename)
-        self.cursor = MenuCursor(image)
+        self.cursor = ImageWidget(image)
         self.add_widget(self.cursor)
 
     # INPUT BUFFER
@@ -264,7 +264,7 @@ class Menu(Widget):
             # a sprite group may not be a relative group... so an attribute error will be raised
             # obvi, a wart, but will be fixed sometime (tm)
             try:
-                self.menu_items.update_rect_from_parent()
+                self.menu_items.update_bounds()
             except AttributeError:
                 # not a relative group, no need to adjust cursor
                 mouse_pos = event.pos
@@ -317,16 +317,16 @@ class Menu(Widget):
         if self.rect.contains(selected_rect):
             return
 
-        # get the bounding box of all the items when laid out
-        bounding = self.menu_items.calc_bounding_rect()
+        self.rect = self.calc_bounding_rect()
+        self.rect.topleft = self.bounds.topleft
+        print(selected_rect, self.rect, self.bounds)
 
         # determine if the contents need to be scrolled within its bounds
-        diff = tools.calc_scroll_thing(selected_rect, bounding, self.rect)
-        print (diff, selected_rect, bounding, self.offset)
-
+        diff = tools.calc_scroll_thing(selected_rect, self.rect, self.bounds)
         if diff:
-            remove_animations_of(self.offset, self.animations)
-            self.animate(self.offset, duration=.25, relative=True, **diff)
+            print(diff)
+            remove_animations_of(self.rect, self.animations)
+            self.animate(self.rect, duration=.25, relative=True, **diff)
 
     def search_items(self, game_object):
         """ Non-optimised search through menu_items for a particular thing
@@ -348,17 +348,15 @@ class Menu(Widget):
         :returns: None or Animation
         """
         selected = self.get_selected_item()
-        if selected is None:
-            raise RuntimeError
 
         x, y = selected.rect.midleft
         x -= tools.scale(2)
 
         if animate:
-            self.remove_animations_of(self.cursor.offset)
-            return self.animate(self.cursor.offset, right=x, centery=y, duration=self.cursor_move_duration)
+            self.remove_animations_of(self.cursor.rect)
+            return self.animate(self.cursor.rect, right=x, centery=y, duration=self.cursor_move_duration)
         else:
-            self.cursor.offset.midright = x, y
+            self.cursor.rect.topleft = x, y
             return None
 
     def get_selected_item(self):
