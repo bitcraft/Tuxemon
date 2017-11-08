@@ -259,14 +259,9 @@ class GridLayout(RelativeLayout, MenuLayout):
 
         :returns: None
         """
-        if not len(self):
-            return
-
-        margin = scale(2)
-
-        # max_width = 0
-
         # TODO: make configuration option
+        margin = scale(2)
+        # max_width = 0
         max_height = 0
         for item in self.children:
             # max_width = max(max_width, item.rect.width)
@@ -275,13 +270,12 @@ class GridLayout(RelativeLayout, MenuLayout):
         spacing = max_height + margin
 
         self.update_rect_from_parent()
-        inner = self.rect
-        width, height = inner.size
+        width, height = self.rect.size
 
         items_per_column = math.ceil(len(self) / self.columns)
 
+        # fill available space
         if self.expand:
-            # fill available space
             line_spacing = self.line_spacing
             if not line_spacing:
                 line_spacing = height // items_per_column
@@ -295,4 +289,4 @@ class GridLayout(RelativeLayout, MenuLayout):
         for index, item in enumerate(self.children):
             oy, ox = divmod(index, self.columns)
             item.rect.topleft = 30 + ox * column_spacing, oy * line_spacing
-            item.rect2 = item.rect.move(self.rect.topleft)
+            item.rect2 = item.rect.move(self.rect.topleft).move(self.offset)

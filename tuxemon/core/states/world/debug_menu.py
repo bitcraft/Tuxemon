@@ -24,6 +24,20 @@
 # Leif Theden <leif.theden@gmail.com>
 #
 #
+"""
+notes:
+
+relative layout
+widgets will expand by default
+their topleft will come from rect2
+rect2 is not calculated, it can be a rect or None
+if None, topleft will be the inner of parent
+if set, it will be the offset for drawing
+
+layouts and programmers can set rect2
+if not set, widget will expand into parent
+"""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -83,13 +97,13 @@ class DebugMenuState(Layout, State):
 
         # widget to show map names
         self.filenames = Menu()
-        self.filenames.menu_items.line_spacing = scale(7)
+        self.filenames.menu_items.line_spacing = scale(30)
         self.filenames.rect2 = tools.scaled_rect(115, 8, 150, 130)
         self.update_filename_list()
         self.add_widget(self.filenames)
 
-        # self.children.remove(self.filenames)
-        # self.children.insert(1, self.filenames)
+        self.children.remove(self.filenames)
+        self.children.insert(1, self.filenames)
 
     def scan_maps(self):
         """ Scan the resources folder for maps.  Return a sorted list of paths.

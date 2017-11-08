@@ -31,6 +31,7 @@ from __future__ import print_function
 import logging
 
 from core import prepare
+from core.components.euclid import Vector2
 from core.components.animation import Animation
 from core.components.animation import Task
 from core.components.animation import remove_animations_of
@@ -60,7 +61,8 @@ class Widget(object):
         self.animations = Group()
         self.padding = 0
         self.transparent = True
-        self.rect2 = None
+        self.offset = Vector2(0, 0)
+        self.rect2 = None  # type: pygame.rect.Rect
         self.expand = True  # will fill all space of parent, if false, will be more compact
         self._in_focus = False
         self._needs_refresh = True
@@ -71,23 +73,19 @@ class Widget(object):
         return "<Widget: {}>".format(self.__class__.__name__)
 
     def __len__(self):
-        kinder = list(self.walk())
-        return len(kinder)
+        return len(list(self.walk()))
 
     def __nonzero__(self):
-        kinder = len(self)
-        return bool(kinder)
+        return bool(len(self))
 
     def __getitem__(self, item):
-        kinder = list(self.walk())
-        return kinder[item]
+        return list(self.walk())[item]
 
     def __iter__(self):
         return self.walk()
 
     def __contains__(self, item):
-        kinder = list(self.walk())
-        return item in kinder
+        return item in list(self.walk())
 
     def _walk(self, restrict=False, loopback=False, index=None):
         # We pass index only when we are going on the parent
@@ -355,7 +353,7 @@ class Widget(object):
     def calc_bounding_rect(self):
         """ Return a rect that contains this and all children
 
-        :rtype: pg.Rect
+        :rtype: pygame.Rect
         """
         self.check_refresh()
         kinder = list(self.children)

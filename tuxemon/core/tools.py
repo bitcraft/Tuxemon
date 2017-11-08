@@ -65,16 +65,14 @@ def calc_scroll_thing(rect, group, bounds):
     that describes the movement along any axis that will cause the
     rect to be contained fully inside the bounds.
 
+    The group is used to determine valid axes to move along.
+
     :type rect: pygame.Rect
-    :type group: pygame.Group
+    :type group: pygame.Rect
     :type bounds: pygame.Rect
 
     :rtype: dict
     """
-    # check if the selected thing is outside the screen
-    if bounds.contains(rect):
-        return None
-
     # get a list of axes that are allowed to scroll
     scroll_axes = calc_scroll_freedom(group, bounds)
 

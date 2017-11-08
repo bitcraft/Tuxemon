@@ -66,9 +66,6 @@ class Menu(Widget):
         self.string_input = ''  # for holding keyboard input
         self._last_input = 0
 
-        # menu_rect is for tracking menu items out of bounds
-        self.menu_rect = None
-
         # menu_items is a layout of selectable elements
         self.menu_items = GridLayout()
         self.menu_items.columns = self.columns
@@ -231,11 +228,11 @@ class Menu(Widget):
 
                 else:
                     index = self.menu_items.determine_cursor_movement(self.selected_index, event)
-                    if index == 6:
-                        parent = self.parent.parent
-                        parent.remove_widget(self.parent)
-                        parent.add_widget(self.parent)
-                        return
+                    # if index == 6:
+                    #     parent = self.parent.parent
+                    #     parent.remove_widget(self.parent)
+                    #     parent.add_widget(self.parent)
+                    #     return
                     if not self.selected_index == index:
                         self.change_selection(index)
                         return
@@ -313,28 +310,23 @@ class Menu(Widget):
 
         :return: None
         """
-        # TODO: unify the menu_rect attribute, or move menu to own widget
-        if self.menu_rect is None:
-            self.menu_rect = self.menu_items.calc_bounding_rect()
-            return False
+        # rect of the newly selected item
+        selected_rect = self.get_selected_item().rect
 
-        menu_rect = self.menu_items.calc_bounding_rect()
+        # if selected rect is within bounds nothing needs to happen
+        if self.rect.contains(selected_rect):
+            return
 
-        # get the selected item, if any
-        selected = self.get_selected_item()
-        if selected is None:
-            raise RuntimeError
+        # get the bounding box of all the items when laid out
+        bounding = self.menu_items.calc_bounding_rect()
 
-        # transform coordinates to screen space
-        selected_rect = self.menu_items.calc_absolute_rect(selected.rect)
-
-        # determine if the contents need to be scrolled on the screen
-        diff = tools.calc_scroll_thing(selected_rect, menu_rect, self.rect)
+        # determine if the contents need to be scrolled within its bounds
+        diff = tools.calc_scroll_thing(selected_rect, bounding, self.rect)
+        print (self.rect, self.rect2, selected_rect, bounding)
 
         if diff:
-            print(diff)
-            remove_animations_of(menu_rect, self.animations)
-            self.animate(self.menu_rect, duration=.25, relative=True, **diff)
+            remove_animations_of(self.rect2, self.animations)
+            self.animate(self.offset, duration=.25, relative=True, **diff)
 
     def search_items(self, game_object):
         """ Non-optimised search through menu_items for a particular thing
@@ -372,8 +364,7 @@ class Menu(Widget):
     def get_selected_item(self):
         """ Get the Menu Item that is currently selected
 
-        :rtype: MenuItem
-        :rtype: core.components.menu.interface.MenuItem
+        :rtype: Widget
         """
         try:
             item = self.menu_items[self.selected_index]
