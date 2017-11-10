@@ -282,9 +282,11 @@ class GridLayout(RelativeLayout, MenuLayout):
         # NOTE: use irect, not bounds, or internal rect
         anchor_x, anchor_y = self.bounds.move(self.irect.topleft).topleft
 
+        bounding = self.calc_bounding_rect()
+
         import pygame
         import pygame.gfxdraw
-        pygame.gfxdraw.box(pygame.display.get_surface(), self.bounds, (255, 255, 0, 128))
+        pygame.gfxdraw.box(pygame.display.get_surface(), bounding, (255, 255, 0, 128))
 
         # TODO: tweak visible bounds
         # visible bounds is inflated normal bounds so next items

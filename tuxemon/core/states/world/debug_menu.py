@@ -81,7 +81,7 @@ class DebugMenuState(Layout, State):
 
         # widget for getting input
         self.key_input = TextInput()
-        #self.add_widget(self.key_input)
+        self.add_widget(self.key_input)
         self.key_input.bounds = tools.scaled_rect(7, 40, 100, 100)
 
         # text widget to show input

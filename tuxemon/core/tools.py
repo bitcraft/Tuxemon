@@ -60,7 +60,7 @@ _font_cache = dict()
 
 
 @contextmanager
-def surface_clipping_context(surface, clip):
+def clip_context(surface, clip):
     original = surface.get_clip()
     surface.set_clip(clip)
     yield

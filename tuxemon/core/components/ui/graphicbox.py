@@ -85,7 +85,7 @@ class GraphicBox(Widget):
 
         # most widgets will draw using the parent's inner rect.
         # the graphic box will use the parent's real rect
-        rect = self.bounds
+        rect = self._bounds
         inner = self.calc_inside(rect)
 
         # fill center with a _background surface

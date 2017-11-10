@@ -30,26 +30,14 @@ from __future__ import print_function
 
 import logging
 
-from core import prepare
+from core import prepare, tools
 from core.components.animation import Animation
 from core.components.animation import Task
 from core.components.animation import remove_animations_of
 from core.group import Group
 from core.rect import Rect
-# Create a logger for optional handling of debug messages.
-from core.tools import surface_clipping_context
 
 logger = logging.getLogger(__name__)
-
-
-def update_rect(rect0, rect1):
-    """ rect0 matches rect1
-
-    :type rect0: Rect.Rect
-    :type rect1: Rect.Rect
-    :return:
-    """
-    rect0[:] = rect1[:]
 
 
 class Widget(object):
@@ -58,8 +46,6 @@ class Widget(object):
     * Widgets can contain other widgets
     * Widgets can define the layout of their children, but not themselves
     * Widgets can draw anywhere, but should stay in bounds
-
-    :ivartype parent: Widget
     """
 
     def __init__(self):
@@ -77,7 +63,7 @@ class Widget(object):
 
         # bounds: screen space region where widget is expected to draw
         # bounds are set by the parents
-        self.bounds = None  # type: Rect
+        self._bounds = None  # type: Rect
         self.fit_bounds()
 
         # irect: rect, relative to bounds; "internal rect"
@@ -111,6 +97,17 @@ class Widget(object):
 
     def __contains__(self, item):
         return item in list(self.walk())
+
+    @property
+    def bounds(self):
+        return self._bounds
+
+    @bounds.setter
+    def bounds(self, rect):
+        if not self._bounds == rect:
+            self._bounds = Rect(rect)
+            for child in self.children:
+                child.fit_bounds()
 
     def toggle_focus(self):
         self._in_focus = not self._in_focus
@@ -169,6 +166,9 @@ class Widget(object):
 
         """
         for child in list(self.children):
+
+            # if event is None, then child widget has used event
+            # so break to prevent propagation of the event
             if event is None:
                 break
 
@@ -186,6 +186,7 @@ class Widget(object):
         :param kwargs: Attributes and their final value
         :returns: core.components.animation.Animation
         """
+        # TODO: Eventually roll this into a game clock/scheduler
         ani = Animation(*targets, **kwargs)
         self.animations.add(ani)
         return ani
@@ -200,6 +201,7 @@ class Widget(object):
         :param kwargs: kwargs passed to the function
         :returns: core.components.animation.Task
         """
+        # TODO: Eventually roll this into a game clock/scheduler
         task = Task(*args, **kwargs)
         self.animations.add(task)
         return task
@@ -210,9 +212,11 @@ class Widget(object):
         :type target: any
         :returns: None
         """
+        # TODO: Eventually roll this into a game clock/scheduler
         remove_animations_of(target, self.animations)
 
     def update(self, time_delta):
+        # TODO: Eventually roll this into a game clock/scheduler
         self.animations.update(time_delta)
         for child in list(self.children):
             child.update(time_delta)
@@ -220,17 +224,29 @@ class Widget(object):
     def fit_bounds(self):
         """ Adjust own bounds from parent's inner rect
 
-        Calling this will change bounds if they were set manually
+        Calling this will change bounds if they were set manually.
 
-        :return:
+        Do not override.  Use _fit_bounds instead.
+
         """
         logger.debug("{} fit bounds".format(self))
 
+        self._fit_bounds()
         self.trigger_refresh()
+        for child in self.children:
+            child.fit_bounds()
+
+    def _fit_bounds(self):
+        """ Adjust own bounds from parent's inner rect
+
+        Calling this will change bounds if they were set manually.
+
+        :return:
+        """
         if self.parent:
-            self.bounds = self.parent.calc_internal_rect()
+            self._bounds = self.parent.calc_internal_rect()
         else:
-            self.bounds = Rect((0, 0), prepare.SCREEN_SIZE)
+            self._bounds = Rect((0, 0), prepare.SCREEN_SIZE)
 
     def trigger_refresh(self):
         """ Call to set a refresh at next opportunity.
@@ -243,7 +259,7 @@ class Widget(object):
         self._needs_refresh = True
 
     def check_refresh(self):
-        """ Check if layout is stale, and if so refresh it
+        """ If layout is stale, refresh it and the children
         
         Best to call this before drawing operations, or before
         the layout is manipulated in some way
@@ -294,12 +310,11 @@ class Widget(object):
 
         :returns: None
         """
-        # self.update_bounds()
         self.trigger_refresh()
         self.check_refresh()
         self._draw(surface)
 
-        with surface_clipping_context(surface, self.bounds):
+        with tools.clip_context(surface, self._bounds):
             for child in self.children:
                 child.draw(surface)
 
@@ -328,24 +343,27 @@ class Widget(object):
 
         :rtype: Rect
         """
-        return self.bounds.inflate(-self.padding, -self.padding)
+        return self._bounds.inflate(-self.padding, -self.padding)
 
     def calc_bounding_rect(self):
         """ Return a rect that contains this and all children
 
-            This is not in screen space.
+        This uses the widget irect, which may be larger than the bounds
+
+        Screen space
 
         :rtype: Rect
         """
         self.check_refresh()
-        kinder = list(self.children)
-
-        if not kinder:
-            return self.irect
-        elif len(kinder) == 1:
-            return Rect(kinder[0].irect)
+        root = self.translate_irect()
+        if self.children:
+            kinder = [i.calc_bounding_rect() for i in self.children]
+            return root.unionall(kinder)
         else:
-            return kinder[0].rect.unionall([s.irect for s in kinder[1:]])
+            return root
+
+    def translate_irect(self):
+        return self.irect.move(self.bounds.topleft)
 
     def calc_final_rect(self):
         """ Calculate the area in the game window where menu is shown
@@ -355,9 +373,6 @@ class Widget(object):
 
         :rtype: Rect
         """
-        # if self.bounds is None:
-        #     self.update_bounds()
-
         original = self.rect.copy()
         self.refresh_layout()
         rect = self.rect.copy()
@@ -413,7 +428,7 @@ class Widget(object):
     def position_rect(self):
         """ Reposition irect taking in account the anchors
 
-        This will adjust the internal position of the rect in the bounds
+        This will adjust the internal position of the rect
 
         :return: True if the rect was changed
         :rtype: bool
@@ -423,9 +438,7 @@ class Widget(object):
         for attribute, value in self._anchors.items():
             setattr(self.irect, attribute, value)
 
-        changed = not old == self.rect
-        if changed:
-            logger.debug("{} trigger refresh positioning".format(self))
+        if not self.rect == old:
             self.trigger_refresh()
 
     def anchor(self, attribute, value):

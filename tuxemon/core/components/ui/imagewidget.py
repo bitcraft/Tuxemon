@@ -15,7 +15,7 @@ class ImageWidget(Widget):
         :type surface: pygame.Surface
         :return:
         """
-        self.rect = self.irect.move(self.bounds.topleft)
+        self.rect = self.calc_bounding_rect()
         if self.visible:
             # if self._flag:
             #     print(self, self.rect, self.irect, self.bounds)

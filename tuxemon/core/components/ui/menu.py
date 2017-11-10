@@ -24,6 +24,10 @@
 # Leif Theden <leif.theden@gmail.com>
 #
 #
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import logging
 
 import pygame
@@ -43,8 +47,8 @@ class MenuItem(ImageWidget):
         self.description = description
         self.game_object = game_object
 
-    # def __repr__(self):
-    #     return "<MenuItem: {}>".format(self.label)
+        # def __repr__(self):
+        #     return "<MenuItem: {}>".format(self.label)
 
 
 class Menu(Widget):
@@ -73,7 +77,7 @@ class Menu(Widget):
         self.selected_index = 0  # track which menu item is selected
         self.menu_select_sound = tools.load_sound(self.menu_select_sound_filename)
 
-        # for keyboard input
+        # for keyboard input handling
         self._key_repeat_task = None  # type: Task
         self._key_repeat_value = None  # type: int
         self._key_repeat_timer = None
@@ -81,6 +85,7 @@ class Menu(Widget):
         self._input_string = ''  # for holding keyboard input
 
         # menu_items is a layout of selectable elements
+        # this is where the item list lives
         self.menu_items = GridLayout()
         self.menu_items.columns = self.columns
         self.add_widget(self.menu_items)
@@ -89,10 +94,6 @@ class Menu(Widget):
         image = tools.load_and_scale(self.cursor_filename)
         self.cursor = ImageWidget(image)
         self.add_widget(self.cursor)
-
-        # init early because we will be changing it before next draw
-        # probably going to fix this hack later
-        self.cursor.bounds = self.cursor.irect.copy()
 
     # def start_text_animation(self, text_area):
     #     """ Start an animation to show textarea, one character at a time
@@ -203,10 +204,9 @@ class Menu(Widget):
         # check if we have items, but they are all disabled
         disabled = all(i.disabled for i in self.menu_items)
 
-        self.trigger_cursor_update(False)
-
         if self.menu_items and not disabled:
             self.show_cursor()
+            self.trigger_cursor_update(False)
         else:
             self.hide_cursor()
 
@@ -254,7 +254,6 @@ class Menu(Widget):
                 # try to find items based on input
                 if self.key_aware:
                     self.handle_keypress(event)
-                    print(self._input_string)
                     # index = self.get_index_from_input()
                     # if index is not None:
                     #     self.change_selection(index)
@@ -265,34 +264,13 @@ class Menu(Widget):
             return
 
         # TODO: handling of click/drag, miss-click, etc
-        # TODO: eventually, maybe move some handling into menuitems
-        # TODO: handle screen scaling?
-        # TODO: generalized widget system
+        # TODO: drag scrolling
         elif self.touch_aware and event.type == pygame.MOUSEBUTTONDOWN:
-            # menu items is (sometimes) a relative group, so their rect will be relative to their parent
-            # we need to adjust the point to topleft of the containing rect
-            # eventually, a widget system could do this automatically
-
-            # make sure that the rect's position is current
-            # a sprite group may not be a relative group... so an attribute error will be raised
-            # obvi, a wart, but will be fixed sometime (tm)
-            try:
-                # self.menu_items.update_bounds()
-                pass
-            except AttributeError:
-                # not a relative group, no need to adjust cursor
-                mouse_pos = event.pos
-            else:
-                # move the mouse/touch origin to be relative to the menu_items
-                # TODO: a vector type would be niceeee
-                mouse_pos = [a - b for a, b in zip(event.pos, self.menu_items.rect.topleft)]
-
-            # loop through all the items here and see if they collide
-            # eventually, we should make this more generic...not part of the menu
-            for index, item in enumerate([i for i in self.menu_items if i.enabled]):
-                if item.rect.collidepoint(mouse_pos):
+            for index, item in enumerate(self.menu_items):
+                if item.enabled and item.bounds.collidepoint(event.pos):
                     self.change_selection(index)
                     self.on_menu_selection(self.get_selected_item())
+                    return None
 
     def handle_keypress(self, event):
         """ Handle a keypress from a human
@@ -325,7 +303,7 @@ class Menu(Widget):
     def check_start_key_repeat(self, key):
         """ Only try to repeat a key if a repeat isn't already running
 
-        Simple check only allows one key repeat and prevent recursion.
+        Simple check only allows one key repeat and prevents recursion.
 
         :type key: int
         :return:
@@ -365,7 +343,7 @@ class Menu(Widget):
         # TODO: remove need to call check_bounds manually
         # call check_bounds to ensure menu scrolls with virtual events
         # some bug prevents check bounds from happening in process_event above
-        # could be related to the order that animations are execute
+        # could be related to the order that animations are executed
         self.check_bounds()
 
     def check_key_repeat(self, key):
@@ -393,7 +371,7 @@ class Menu(Widget):
         return None
 
     def change_selection(self, index, animate=True):
-        """ Force the menu to be evaluated and move cursor and trigger focus changes
+        """ Force the menu to be evaluated, move cursor, and trigger focus changes
 
         :return: None
         """
@@ -408,21 +386,19 @@ class Menu(Widget):
         self.on_menu_selection_change()  # let subclass know menu has changed
 
     def check_bounds(self):
-        """ Check if the currently selected item is off screen, and animate to show it
+        """ Check if the currently selected item is off screen and animate to show it
 
         This is essentially: scrolling the menu items if the items are off screen
-
-        WIP
 
         :return: None
         """
         # rect of the newly selected item and cursor
         # TODO: what is the selected item not able to test bounds?
-        selection = self.get_selected_item().rect.union(self.cursor.bounds)
+        selection = self.get_selected_item().rect.union(self.cursor._bounds)
 
         # TODO: do not hardcode values
         # adjust bounds to compensate for the cursor
-        bounds = self.bounds.inflate(tools.scale(-2), tools.scale(-6))
+        bounds = self._bounds.inflate(tools.scale(-2), tools.scale(-6))
 
         # if selected rect is within bounds nothing needs to happen
         if bounds.contains(selection):
@@ -466,15 +442,15 @@ class Menu(Widget):
             # top = self.menu_items.bounds.top + 100
             # self.remove_animations_of(self.menu_items.irect)
             # self.animate(self.menu_items.irect, y=top, duration=self.cursor_move_duration)
-            self.cursor.bounds.size = self.cursor.irect.size
-            self.remove_animations_of(self.cursor.bounds)
-            ani = self.animate(self.cursor.bounds, right=x, centery=y, duration=self.cursor_move_duration)
+            self.cursor._bounds.size = self.cursor.irect.size
+            self.remove_animations_of(self.cursor._bounds)
+            ani = self.animate(self.cursor._bounds, right=x, centery=y, duration=self.cursor_move_duration)
             ani.update_callback = self.check_bounds
             return ani
         else:
-            self.remove_animations_of(self.cursor.bounds)
-            self.cursor.bounds.size = self.cursor.irect.size
-            self.cursor.bounds.midright = x, y
+            self.remove_animations_of(self.cursor._bounds)
+            self.cursor._bounds.size = self.cursor.irect.size
+            self.cursor._bounds.midright = x, y
             return None
 
     def get_selected_item(self):
@@ -487,8 +463,7 @@ class Menu(Widget):
             assert item is not None
             return item
         except IndexError:
-            print(self.menu_items, self.selected_index)
-            raise RuntimeError("invalid selected index?")
+            return None
 
     # ============================================================================
     #   The following methods are designed to be monkey patched or overloaded
