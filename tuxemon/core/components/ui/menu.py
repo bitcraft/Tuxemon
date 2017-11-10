@@ -190,25 +190,25 @@ class Menu(Widget):
             if selected is not None:
                 selected.in_focus = False
 
-    def _refresh_layout(self):
-        """ Fit border to contents and hide/show cursor
-
-        :return:
-        """
-        # self.menu_items.expand = not self.shrink_to_items
-
-        if not self.in_focus:
-            self.hide_cursor()
-            return
-
-        # check if we have items, but they are all disabled
-        disabled = all(i.disabled for i in self.menu_items)
-
-        if self.menu_items and not disabled:
-            self.show_cursor()
-            self.trigger_cursor_update(False)
-        else:
-            self.hide_cursor()
+    # def _refresh_layout(self):
+    #     """ Fit border to contents and hide/show cursor
+    #
+    #     :return:
+    #     """
+    #     # self.menu_items.expand = not self.shrink_to_items
+    #
+    #     if not self.in_focus:
+    #         self.hide_cursor()
+    #         return
+    #
+    #     # check if we have items, but they are all disabled
+    #     disabled = all(i.disabled for i in self.menu_items)
+    #
+    #     if self.menu_items and not disabled:
+    #         self.show_cursor()
+    #         self.trigger_cursor_update(False)
+    #     else:
+    #         self.hide_cursor()
 
     # INPUT BUFFER
     def add_input_buffer(self, char):
@@ -254,10 +254,7 @@ class Menu(Widget):
                 # try to find items based on input
                 if self.key_aware:
                     self.handle_keypress(event)
-                    # index = self.get_index_from_input()
-                    # if index is not None:
-                    #     self.change_selection(index)
-                    #     return
+                    return None
 
         elif event.type == pygame.KEYUP:
             self.check_key_repeat(event.key)
@@ -265,12 +262,13 @@ class Menu(Widget):
 
         # TODO: handling of click/drag, miss-click, etc
         # TODO: drag scrolling
-        elif self.touch_aware and event.type == pygame.MOUSEBUTTONDOWN:
-            for index, item in enumerate(self.menu_items):
-                if item.enabled and item.bounds.collidepoint(event.pos):
-                    self.change_selection(index)
-                    self.on_menu_selection(self.get_selected_item())
-                    return None
+        elif self.touch_aware:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                for index, item in enumerate(self.menu_items):
+                    if item.enabled and item.bounds.collidepoint(event.pos):
+                        self.change_selection(index)
+                        # self.on_menu_selection(self.get_selected_item())
+                        return None
 
     def handle_keypress(self, event):
         """ Handle a keypress from a human
@@ -381,7 +379,7 @@ class Menu(Widget):
         self.selected_index = index  # update the selection index
         self.menu_select_sound.play()  # play a sound
         self.trigger_cursor_update(animate)  # move cursor and [maybe] animate it
-        # self.check_bounds()  # scroll items if off the screen
+        self.check_bounds()  # scroll items if off the screen
         self.get_selected_item().in_focus = True  # set focus flag of new item
         self.on_menu_selection_change()  # let subclass know menu has changed
 
@@ -392,21 +390,34 @@ class Menu(Widget):
 
         :return: None
         """
-        # rect of the newly selected item and cursor
-        # TODO: what is the selected item not able to test bounds?
-        selection = self.get_selected_item().rect.union(self.cursor._bounds)
+        # bounds of the newly selected item
+        selection = self.get_selected_item().bounds
 
-        # TODO: do not hardcode values
         # adjust bounds to compensate for the cursor
-        bounds = self._bounds.inflate(tools.scale(-2), tools.scale(-6))
+        bounds = self._bounds.inflate(0, -tools.scale(8))
 
-        # if selected rect is within bounds nothing needs to happen
+        # import pygame.gfxdraw
+        # # white
+        # pygame.gfxdraw.box(pygame.display.get_surface(), selection, (255, 255, 255, 128))
+        #
+        # # red
+        # pygame.gfxdraw.box(pygame.display.get_surface(), bounds, (255, 0, 0, 128))
+        #
+        # # green
+        # pygame.gfxdraw.box(pygame.display.get_surface(), bounding_rect, (0, 255, 0, 128))
+        #
+        # pygame.display.flip()
+        #
+        # import time
+        # time.sleep(.05)
+
         if bounds.contains(selection):
             return
 
         # determine if the contents need to be scrolled within its bounds
         bounding_rect = self.calc_bounding_rect()
 
+        # if selected rect is within bounds nothing needs to happen
         diff = tools.calc_scroll_thing(selection, bounding_rect, bounds)
         if diff:
             self.remove_animations_of(self.menu_items.irect)
@@ -439,13 +450,11 @@ class Menu(Widget):
         self.cursor._flag = True
 
         if animate:
-            # top = self.menu_items.bounds.top + 100
-            # self.remove_animations_of(self.menu_items.irect)
-            # self.animate(self.menu_items.irect, y=top, duration=self.cursor_move_duration)
+            # not sure why next line is needed....don't remove ^_^
             self.cursor._bounds.size = self.cursor.irect.size
             self.remove_animations_of(self.cursor._bounds)
             ani = self.animate(self.cursor._bounds, right=x, centery=y, duration=self.cursor_move_duration)
-            ani.update_callback = self.check_bounds
+            # ani.update_callback = self.check_bounds
             return ani
         else:
             self.remove_animations_of(self.cursor._bounds)
@@ -469,25 +478,10 @@ class Menu(Widget):
     #   The following methods are designed to be monkey patched or overloaded
     # ============================================================================
 
-    def calc_menu_items_rect(self):
-        """ Calculate the area inside the internal rect where items are listed
-
-        :rtype: pygame.Rect
-        """
-        # WARNING: hardcoded values related to menu arrow size
-        #          if menu arrow image changes, this should be adjusted
-        cursor_margin = -tools.scale(11), -tools.scale(5)
-        inner = self.calc_internal_rect()
-        menu_rect = inner.inflate(*cursor_margin)
-        menu_rect.bottomright = inner.bottomright
-        return menu_rect
-
     def on_menu_selection(self, item):
         """ Hook for things to happen when player selects a menu option
 
         Override in subclass, if you want to
-
-        :return:
         """
         if item.enabled:
             item.game_object()
@@ -495,8 +489,6 @@ class Menu(Widget):
     def on_menu_selection_change(self):
         """ Hook for things to happen after menu selection changes
 
-        Override in subclass
-
-        :returns: None
+        Override in subclass, if you want to
         """
         pass

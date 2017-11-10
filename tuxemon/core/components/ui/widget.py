@@ -44,7 +44,7 @@ class Widget(object):
     """ Widgets are graphical elements
 
     * Widgets can contain other widgets
-    * Widgets can define the layout of their children, but not themselves
+    * Widgets can define the layout of their children
     * Widgets can draw anywhere, but should stay in bounds
     """
 
@@ -243,9 +243,9 @@ class Widget(object):
         logger.debug("{} fit bounds".format(self))
 
         self._fit_bounds()
-        self.trigger_refresh()
         for child in self.children:
             child.fit_bounds()
+        self.trigger_refresh()
 
     def _fit_bounds(self):
         """ Adjust own bounds from parent's inner rect
@@ -271,7 +271,6 @@ class Widget(object):
             # prevent recursion if refresh is triggered during refresh
             self._in_refresh = True
 
-            # force refresh
             self._refresh_layout()
 
             for child in self.children:
