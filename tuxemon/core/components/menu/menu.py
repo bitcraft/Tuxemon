@@ -34,7 +34,9 @@ from functools import partial
 import pygame
 
 from core import prepare, tools
-from core.components.menu.interface import MenuCursor, MenuItem, ImageWidget
+from core.components.menu.interface import MenuCursor
+from core.components.ui import MenuItem
+from core.components.ui.imagewidget import ImageWidget
 from core.components.sprite import RelativeGroup, VisualSpriteList
 from core.components.ui.graphicbox import GraphicBox
 from core.components.ui.textarea import TextArea
@@ -559,7 +561,7 @@ class Menu2(Widget):
         """ Get the Menu Item that is currently selected
 
         :rtype: MenuItem
-        :rtype: core.components.menu.interface.MenuItem
+        :rtype: core.components.ui.MenuItem
         """
         try:
             return self.menu_items[self.selected_index]

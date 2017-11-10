@@ -81,24 +81,24 @@ class DebugMenuState(Layout, State):
 
         # widget for getting input
         self.key_input = TextInput()
+        #self.add_widget(self.key_input)
         self.key_input.bounds = tools.scaled_rect(7, 40, 100, 100)
-        self.add_widget(self.key_input)
 
         # text widget to show input
         font = tools.load_default_font()
         font_color = (255, 255, 255)
         self.text_area = TextArea(font, font_color, (96, 96, 96))
         self.text_area.animated = False
-        self.text_area.bounds = tools.scaled_rect(20, 23, 80, 100)
         self.text_area.text = self.empty_box
         self.add_widget(self.text_area)
+        self.text_area.bounds = tools.scaled_rect(20, 23, 80, 100)
 
         # widget to show map names
         self.filenames = Menu()
         self.filenames.menu_items.line_spacing = tools.scale(7)
-        self.filenames.bounds = tools.scaled_rect(115, 8, 150, 130)
         self.update_filename_list()
         self.add_widget(self.filenames)
+        self.filenames.bounds = tools.scaled_rect(115, 8, 150, 130)
 
         self.children.remove(self.filenames)
         self.children.insert(1, self.filenames)

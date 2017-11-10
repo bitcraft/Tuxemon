@@ -2,7 +2,6 @@ import pygame
 
 from core import tools
 from core.components.ui.graphicbox import GraphicBox
-from core.components.ui.widget import Widget
 
 
 class HorizontalBar(object):
@@ -81,33 +80,3 @@ class HpBar(HorizontalBar):
     #     return inner
 
 
-class ImageWidget(Widget):
-    def __init__(self, image):
-        super(ImageWidget, self).__init__()
-        self.image = image
-        self.irect = image.get_rect()
-        self.rect = self.irect.copy()
-        self._flag = False
-
-    def _draw(self, surface):
-        """
-
-        :param surface:
-        :return:
-        """
-        self.rect = self.irect.move(self.bounds.topleft)
-        if self.visible:
-            # if self._flag:
-            #     print(self, self.rect, self.irect, self.bounds)
-            surface.blit(self.image, self.rect)
-
-
-class MenuItem(ImageWidget):
-    def __init__(self, image, label, description, game_object):
-        super(MenuItem, self).__init__(image)
-        self.label = label
-        self.description = description
-        self.game_object = game_object
-
-    def __repr__(self):
-        return "<MenuItem: {}>".format(self.label)

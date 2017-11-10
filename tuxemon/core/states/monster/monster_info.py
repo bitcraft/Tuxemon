@@ -32,7 +32,8 @@ from __future__ import division
 import pygame as pg
 
 from core import tools
-from core.components.menu.interface import MenuItem, HorizontalBar
+from core.components.menu.interface import HorizontalBar
+from core.components.ui import MenuItem
 from core.components.ui.menu import Menu
 from core.components.ui.graphicbox import GraphicBox
 from core.components.ui.textarea import TextArea

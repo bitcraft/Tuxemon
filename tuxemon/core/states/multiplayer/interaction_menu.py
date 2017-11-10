@@ -1,5 +1,5 @@
 from core.components.menu import PopUpMenu
-from core.components.menu.interface import MenuItem
+from core.components.ui import MenuItem
 from core.components.ui.text import shadow_text
 
 

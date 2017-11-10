@@ -9,7 +9,7 @@ import pygame
 from core import tools
 from core.components.locale import translator
 from core.components.ui.popup import PopUpMenu
-from core.components.menu.interface import MenuItem
+from core.components.ui import MenuItem
 # from core.components.menu.menu import Menu
 # from core.components.sprite import MenuSpriteGroup, SpriteGroup
 from core.components.ui.menu import Menu

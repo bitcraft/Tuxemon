@@ -29,7 +29,7 @@
 #
 from __future__ import absolute_import
 
-from core.components.menu.interface import MenuItem
+from core.components.ui.menu import MenuItem
 
 
 def build_text_item(label, callback, icon=None):

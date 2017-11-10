@@ -28,7 +28,7 @@ from __future__ import division
 
 from core import tools
 from core.components.locale import translator
-from core.components.menu.interface import MenuItem
+from core.components.ui import MenuItem
 from core.components.ui.menu import Menu
 from core.components.sprite import Sprite
 from core.components.ui.textarea import TextArea

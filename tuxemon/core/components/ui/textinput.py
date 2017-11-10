@@ -62,4 +62,4 @@ class TextInput(Widget):
         item = build_text_item("END", None)
         add_widget(item)
 
-        self.string_input = self.key_input.string_input
+        self.string_input = self.key_input._input_string

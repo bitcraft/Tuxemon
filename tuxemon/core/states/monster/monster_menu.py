@@ -33,7 +33,8 @@ import pygame
 from core import prepare
 from core import tools
 from core.components.ui.menu import Menu
-from core.components.menu.interface import HpBar, MenuItem
+from core.components.menu.interface import HpBar
+from core.components.ui import MenuItem
 from core.components.ui.graphicbox import GraphicBox
 from core.components.ui.font import draw_text
 from core.components.ui.textarea import TextArea

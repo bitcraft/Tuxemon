@@ -76,8 +76,9 @@ class Widget(object):
         self._needs_refresh = True
 
         # bounds: screen space region where widget is expected to draw
-        # bounds are set by the parent
+        # bounds are set by the parents
         self.bounds = None  # type: Rect
+        self.fit_bounds()
 
         # irect: rect, relative to bounds; "internal rect"
         # irect position is set by parent or widget
@@ -110,6 +111,17 @@ class Widget(object):
 
     def __contains__(self, item):
         return item in list(self.walk())
+
+    def toggle_focus(self):
+        self._in_focus = not self._in_focus
+
+    @property
+    def in_focus(self):
+        return self._in_focus
+
+    @in_focus.setter
+    def in_focus(self, value):
+        self._in_focus = bool(value)
 
     # def _walk(self, restrict=False, loopback=False, index=None):
     #     # We pass index only when we are going on the parent
@@ -181,7 +193,7 @@ class Widget(object):
     def task(self, *args, **kwargs):
         """ Create a task for this widget
 
-        Tasks are processed even while state is inactive
+        Tasks are processed even while widget is disabled
         If you want to pass positional arguments, use functools.partial
 
         :param args: function to be called
@@ -193,7 +205,7 @@ class Widget(object):
         return task
 
     def remove_animations_of(self, target):
-        """ Given and object, remove any animations that it is used with
+        """ Given and object, remove any animations modify the target object
 
         :type target: any
         :returns: None
@@ -205,48 +217,20 @@ class Widget(object):
         for child in list(self.children):
             child.update(time_delta)
 
-    def update_rect(self):
-        """ Fit the rect to our bounds
-
-        Do not override.  Use _update_rect instead.
-
-        :return:
-        """
-        logger.debug("{} updating rect".format(self))
-        update_rect(self.rect, self.bounds)
-        # self.trigger_refresh()
-
-    def _update_rect(self):
-        # update_rect(self.rect, self.bounds)
-        pass
-
-    def update_bounds(self):
+    def fit_bounds(self):
         """ Adjust own bounds from parent's inner rect
 
-        Calling this will reset bounds if they were set manually.
+        Calling this will change bounds if they were set manually
 
         :return:
         """
-        logger.debug("{} updating bounds".format(self))
-        changed = False
+        logger.debug("{} fit bounds".format(self))
 
-        # if has a parent, check the parent
+        self.trigger_refresh()
         if self.parent:
-            if self.bounds is None:
-                self.bounds = self.parent.calc_internal_rect()
-                changed = True
-
-        # no parent, so expand to fill the screen
-        elif self.bounds is None:
+            self.bounds = self.parent.calc_internal_rect()
+        else:
             self.bounds = Rect((0, 0), prepare.SCREEN_SIZE)
-            changed = True
-
-        if changed:
-            logger.debug("BOUNDS, {} {} {}".format(self, self.bounds, self.rect))
-            logger.debug("{} trigger refresh update from parent".format(self))
-            # self.trigger_refresh()
-
-        return changed
 
     def trigger_refresh(self):
         """ Call to set a refresh at next opportunity.
@@ -263,17 +247,10 @@ class Widget(object):
         
         Best to call this before drawing operations, or before
         the layout is manipulated in some way
-        
-        :returns: True is the layout was refreshed
-        :rtype: bool
         """
         if self._needs_refresh and not self._in_refresh:
 
-            if self.rect is None:
-                self.rect = Rect(0, 0, 0, 0)
-                self.update_rect()
-
-            # prevent recursion if refresh is checked during refresh
+            # prevent recursion if refresh is triggered during refresh
             self._in_refresh = True
 
             # force refresh
@@ -284,10 +261,6 @@ class Widget(object):
 
             self._needs_refresh = False
             self._in_refresh = False
-
-            return True
-
-        return False
 
     def refresh_layout(self):
         """ Force the layout to refresh self and children
@@ -312,15 +285,16 @@ class Widget(object):
     def draw(self, surface):
         """ Cause this and all children to draw themselves to the surface
 
+        Add drawing operations will be limited to the bounds of this widget
+
         Do not override.  Use _draw instead.
 
         :param surface: Surface to draw on
         :type surface: pygame.surface.Surface
 
-        :rtype: None
         :returns: None
         """
-        self.update_bounds()
+        # self.update_bounds()
         self.trigger_refresh()
         self.check_refresh()
         self._draw(surface)
@@ -340,6 +314,8 @@ class Widget(object):
     def calc_internal_rect(self):
         """ Calculate the area inside the borders, if any.
         If no padding is present, a copy of the window rect will be returned
+
+        Do not override.  Use _calc_internal_rect instead.
 
         :returns: Rect representing space inside borders, if any
         :rtype: Rect
@@ -390,17 +366,19 @@ class Widget(object):
         return rect
 
     def add_widget(self, widget, index=None):
-        """ Add a widget to this window as a child
+        """ Add a widget to this wiget as a child
 
         :type widget: Widget
         :type index: int
 
         :return:
         """
+        logger.debug("{} adding widget".format(self))
         if widget.parent:
             raise RuntimeError('cannot add widget because it is already contained by another')
 
         widget.parent = self
+        widget.fit_bounds()
 
         if self.disabled:
             widget.disabled = True
@@ -410,7 +388,6 @@ class Widget(object):
         else:
             self.children.insert(index, widget)
 
-        logger.debug("{} adding widget".format(self))
         self.trigger_refresh()
 
     def remove_widget(self, widget):
@@ -420,10 +397,10 @@ class Widget(object):
 
         :return:
         """
-        self.children.remove(widget)
         logger.debug("{} removing widget".format(self))
-        self.trigger_refresh()
         widget.parent = None
+        self.children.remove(widget)
+        self.trigger_refresh()
 
     def clear_widgets(self):
         """ Remove all the widgets contained
@@ -434,22 +411,22 @@ class Widget(object):
             self.remove_widget(widget)
 
     def position_rect(self):
-        """ Reposition rect taking in account the anchors
-        
+        """ Reposition irect taking in account the anchors
+
+        This will adjust the internal position of the rect in the bounds
+
         :return: True if the rect was changed
         :rtype: bool
         """
-        old = self.rect.copy()
+        old = self.irect.copy()
 
         for attribute, value in self._anchors.items():
-            setattr(self.rect, attribute, value)
+            setattr(self.irect, attribute, value)
 
         changed = not old == self.rect
         if changed:
             logger.debug("{} trigger refresh positioning".format(self))
             self.trigger_refresh()
-
-        return changed
 
     def anchor(self, attribute, value):
         """ Set an anchor for the menu window
@@ -473,14 +450,3 @@ class Widget(object):
             del self._anchors[attribute]
         else:
             self._anchors[attribute] = value
-
-    def toggle_focus(self):
-        self._in_focus = not self._in_focus
-
-    @property
-    def in_focus(self):
-        return self._in_focus
-
-    @in_focus.setter
-    def in_focus(self, value):
-        self._in_focus = bool(value)

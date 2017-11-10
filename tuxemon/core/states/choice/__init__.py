@@ -1,6 +1,6 @@
 from __future__ import division
 
-from core.components.menu.interface import MenuItem
+from core.components.ui import MenuItem
 from core.components.ui.font import shadow_text
 from core.components.ui.popup import PopUpMenu
 

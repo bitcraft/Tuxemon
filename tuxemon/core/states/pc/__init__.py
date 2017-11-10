@@ -40,7 +40,7 @@ from core.tools import open_dialog
 from core.components.game_event import GAME_EVENT, INPUT_EVENT
 from core.components.locale import translator
 from core.components.ui.popup import PopUpMenu
-from core.components.menu.interface import MenuItem
+from core.components.ui import MenuItem
 from core.components.ui.font import shadow_text
 
 # Create a logger for optional handling of debug messages.

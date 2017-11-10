@@ -29,11 +29,22 @@ import logging
 import pygame
 
 from core import tools
-from core.components.menu.interface import ImageWidget
+from core.components.ui.imagewidget import ImageWidget
 from core.components.ui.layout import GridLayout
 from core.components.ui.widget import Widget
 
 logger = logging.getLogger(__name__)
+
+
+class MenuItem(ImageWidget):
+    def __init__(self, image, label, description, game_object):
+        super(MenuItem, self).__init__(image)
+        self.label = label
+        self.description = description
+        self.game_object = game_object
+
+    # def __repr__(self):
+    #     return "<MenuItem: {}>".format(self.label)
 
 
 class Menu(Widget):
@@ -53,9 +64,9 @@ class Menu(Widget):
     cursor_move_duration = .20
     touch_aware = True  # if true, then menu items can be selected with the mouse/touch
     key_aware = True  # if true, then keyboard input will try to find items
-    input_timeout = .01  # time to clear the keyboard input buffer
-    key_repeat_interval = .1  # time between repeat keypresses
-    key_repeat_delay = .5  # time to wait until repeat keys
+    input_timeout = 1  # time to clear the keyboard input buffer
+    key_repeat_interval = .05  # time between repeat keypresses
+    key_repeat_delay = .4  # time to wait until repeat keys
 
     def __init__(self):
         super(Menu, self).__init__()
@@ -66,7 +77,8 @@ class Menu(Widget):
         self._key_repeat_task = None  # type: Task
         self._key_repeat_value = None  # type: int
         self._key_repeat_timer = None
-        self.string_input = ''  # for holding keyboard input
+        self._input_clear_task = None  # type: Task
+        self._input_string = ''  # for holding keyboard input
 
         # menu_items is a layout of selectable elements
         self.menu_items = GridLayout()
@@ -81,16 +93,6 @@ class Menu(Widget):
         # init early because we will be changing it before next draw
         # probably going to fix this hack later
         self.cursor.bounds = self.cursor.irect.copy()
-
-    # INPUT BUFFER
-    def add_input_buffer(self, char):
-        self.string_input += char
-
-    def clear_input_buffer(self):
-        self.string_input = ''
-
-    def backspace(self):
-        self.string_input = self.string_input[:-1]
 
     # def start_text_animation(self, text_area):
     #     """ Start an animation to show textarea, one character at a time
@@ -208,6 +210,16 @@ class Menu(Widget):
         else:
             self.hide_cursor()
 
+    # INPUT BUFFER
+    def add_input_buffer(self, char):
+        self._input_string += char
+
+    def clear_input_buffer(self):
+        self._input_string = ''
+
+    def backspace(self):
+        self._input_string = self._input_string[:-1]
+
     def process_event(self, event):
         """ Process pygame input events
 
@@ -237,21 +249,16 @@ class Menu(Widget):
                     if not self.selected_index == index:
                         self.change_selection(index)
                         self.check_start_key_repeat(event.key)
-                    return
+                        return
 
-            # try to find items based on input
-            if self.key_aware:
-
-                # manage the keybuffer
-                # if time.time() > self._last_input + self.input_timeout:
-                #     self.clear_input_buffer()
-                #     self._last_input = time.time()
-
-                self.add_input_buffer(event.unicode.upper())
-                index = self.get_index_from_input()
-                if index is not None:
-                    self.change_selection(index)
-                    return
+                # try to find items based on input
+                if self.key_aware:
+                    self.handle_keypress(event)
+                    print(self._input_string)
+                    # index = self.get_index_from_input()
+                    # if index is not None:
+                    #     self.change_selection(index)
+                    #     return
 
         elif event.type == pygame.KEYUP:
             self.check_key_repeat(event.key)
@@ -286,6 +293,34 @@ class Menu(Widget):
                 if item.rect.collidepoint(mouse_pos):
                     self.change_selection(index)
                     self.on_menu_selection(self.get_selected_item())
+
+    def handle_keypress(self, event):
+        """ Handle a keypress from a human
+
+        * store the input
+        * keep a timer to clear the input
+
+        :type event: pygame.event.Event
+        :return:
+        """
+        self.add_input_buffer(event.unicode.upper())
+        if self._input_clear_task:
+            self._input_clear_task.abort()
+
+        index = self.find_selection(self._input_string)
+        if index is None:
+            self.clear_input_buffer()
+        else:
+            task = self.task(self.clear_input_buffer, self.input_timeout)
+            self._input_clear_task = task
+            self.change_selection(index)
+
+    def find_selection(self, query):
+        for index, result in enumerate(self.menu_items.children):
+            if query in result.label.upper():
+                return index
+        else:
+            return None
 
     def check_start_key_repeat(self, key):
         """ Only try to repeat a key if a repeat isn't already running
@@ -353,7 +388,7 @@ class Menu(Widget):
 
     def get_index_from_input(self):
         for index, item in enumerate(self.menu_items):
-            if self.string_input in item.label.upper():
+            if self._input_string in item.label.upper():
                 return index
         return None
 
