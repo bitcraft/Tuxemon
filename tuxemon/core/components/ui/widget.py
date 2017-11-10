@@ -167,9 +167,9 @@ class Widget(object):
         """
         for child in list(self.children):
 
-            # if event is None, then child widget has used event
-            # so break to prevent propagation of the event
             if event is None:
+                # if event is None, then child widget has used event,
+                # so break to prevent further propagation
                 break
 
             event = child.process_event(event)
@@ -221,9 +221,20 @@ class Widget(object):
         for child in list(self.children):
             child.update(time_delta)
 
+    def trigger_refresh(self):
+        """ Call to set a refresh at next opportunity.
+
+        Best to call this after the widget's position or bounds changes.
+
+        :return: None
+        """
+        logger.debug("{} TRIGGERED".format(self))
+        self._needs_refresh = True
+
     def fit_bounds(self):
         """ Adjust own bounds from parent's inner rect
 
+        Will force children to fit bounds as well
         Calling this will change bounds if they were set manually.
 
         Do not override.  Use _fit_bounds instead.
@@ -239,6 +250,7 @@ class Widget(object):
     def _fit_bounds(self):
         """ Adjust own bounds from parent's inner rect
 
+        Should not change the children
         Calling this will change bounds if they were set manually.
 
         :return:
@@ -248,20 +260,10 @@ class Widget(object):
         else:
             self._bounds = Rect((0, 0), prepare.SCREEN_SIZE)
 
-    def trigger_refresh(self):
-        """ Call to set a refresh at next opportunity.
-        
-        Best to call this after the widget's position or bounds changes.
-        
-        :return: None
-        """
-        logger.debug("{} TRIGGERED".format(self))
-        self._needs_refresh = True
-
     def check_refresh(self):
         """ If layout is stale, refresh it and the children
         
-        Best to call this before drawing operations, or before
+        Best to call this before drawing operations or before
         the layout is manipulated in some way
         """
         if self._needs_refresh and not self._in_refresh:
@@ -292,7 +294,7 @@ class Widget(object):
             child.refresh_layout()
 
     def _refresh_layout(self):
-        """ Override if this widget does anything fancy with it's own rect or children
+        """ Override if this widget has special layout needs
 
         :return: None
         """
@@ -301,7 +303,7 @@ class Widget(object):
     def draw(self, surface):
         """ Cause this and all children to draw themselves to the surface
 
-        Add drawing operations will be limited to the bounds of this widget
+        Drawing operations will be limited to the bounds of this widget
 
         Do not override.  Use _draw instead.
 
@@ -312,9 +314,9 @@ class Widget(object):
         """
         self.trigger_refresh()
         self.check_refresh()
-        self._draw(surface)
 
         with tools.clip_context(surface, self._bounds):
+            self._draw(surface)
             for child in self.children:
                 child.draw(surface)
 
@@ -328,7 +330,6 @@ class Widget(object):
 
     def calc_internal_rect(self):
         """ Calculate the area inside the borders, if any.
-        If no padding is present, a copy of the window rect will be returned
 
         Do not override.  Use _calc_internal_rect instead.
 
@@ -339,18 +340,18 @@ class Widget(object):
         return self._calc_internal_rect()
 
     def _calc_internal_rect(self):
-        """
+        """ Return bounds - padding
 
         :rtype: Rect
         """
         return self._bounds.inflate(-self.padding, -self.padding)
 
     def calc_bounding_rect(self):
-        """ Return a rect that contains this and all children
+        """ Return a screen rect that contains this and all children
 
         This uses the widget irect, which may be larger than the bounds
-
-        Screen space
+        Suitable for use checking screen boundaries
+        May be larger than bounds of this widget
 
         :rtype: Rect
         """
@@ -363,6 +364,10 @@ class Widget(object):
             return root
 
     def translate_irect(self):
+        """ Return irect in screen coordinates
+
+        :return:
+        """
         return self.irect.move(self.bounds.topleft)
 
     def calc_final_rect(self):
@@ -381,7 +386,7 @@ class Widget(object):
         return rect
 
     def add_widget(self, widget, index=None):
-        """ Add a widget to this wiget as a child
+        """ Add a widget to this widget as a child
 
         :type widget: Widget
         :type index: int
@@ -392,9 +397,6 @@ class Widget(object):
         if widget.parent:
             raise RuntimeError('cannot add widget because it is already contained by another')
 
-        widget.parent = self
-        widget.fit_bounds()
-
         if self.disabled:
             widget.disabled = True
 
@@ -402,6 +404,9 @@ class Widget(object):
             self.children.append(widget)
         else:
             self.children.insert(index, widget)
+
+        widget.parent = self
+        widget.fit_bounds()
 
         self.trigger_refresh()
 
