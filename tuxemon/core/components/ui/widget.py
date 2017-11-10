@@ -36,9 +36,20 @@ from core.components.animation import Task
 from core.components.animation import remove_animations_of
 from core.group import Group
 from core.rect import Rect
-
 # Create a logger for optional handling of debug messages.
+from core.tools import surface_clipping_context
+
 logger = logging.getLogger(__name__)
+
+
+def update_rect(rect0, rect1):
+    """ rect0 matches rect1
+
+    :type rect0: Rect.Rect
+    :type rect1: Rect.Rect
+    :return:
+    """
+    rect0[:] = rect1[:]
 
 
 class Widget(object):
@@ -55,19 +66,32 @@ class Widget(object):
         self.parent = None  # type: Widget
         self.enabled = True
         self.disabled = False
+        self.visible = True
         self.transparent = True
-        self.expand = True  # fill all space of parent
         self.padding = 0  # used to compensate for window borders
-        self.bounds = Rect(0, 0, 0, 0)  # set by parent where drawing should happen
-        self.bounds = None
-        self.rect = Rect(0, 0, 0, 0)  # dimensions of content
-        self.inner = None  # where children are drawn
         self.children = list()  # type: List[Widget]
         self.animations = Group()
         self._in_focus = False
         self._in_refresh = False
-        self._anchors = dict()  # used to position the menu/state
         self._needs_refresh = True
+
+        # bounds: screen space region where widget is expected to draw
+        # bounds are set by the parent
+        self.bounds = None  # type: Rect
+
+        # irect: rect, relative to bounds; "internal rect"
+        # irect position is set by parent or widget
+        # irect size should not be changed by parent
+        self.irect = Rect(0, 0, 0, 0)
+
+        # rect: screen space region where widget was last drawn
+        # rect is set by the widget
+        # rect should not be changed by parent
+        self.rect = None  # type: Rect
+
+        # anchors: used to position rect inside the bounds
+        # may be set by parents or widget
+        self._anchors = dict()  # used to position the menu/state
 
     def __repr__(self):
         return "<Widget: {}>".format(self.__class__.__name__)
@@ -87,59 +111,38 @@ class Widget(object):
     def __contains__(self, item):
         return item in list(self.walk())
 
-    def _walk(self, restrict=False, loopback=False, index=None):
-        # We pass index only when we are going on the parent
-        # so don't yield the parent as well.
-        if index is None:
-            index = len(self.children)
-            yield self
-
-        for child in reversed(self.children[:index]):
-            for walk_child in child._walk(restrict=True):
-                yield walk_child
-
-        # If we want to continue with our parent, just do it.
-        if not restrict:
-            parent = self.parent
-            try:
-                if parent is None or not isinstance(parent, Widget):
-                    raise ValueError
-                index = parent.children.index(self)
-            except ValueError:
-                # Self is root, if we want to loopback from the first element:
-                if not loopback:
-                    return
-                # If we started with root (i.e. index==None), then we have to
-                # start from root again, so we return self again. Otherwise, we
-                # never returned it, so return it now starting with it.
-                parent = self
-                index = None
-            for walk_child in parent._walk(loopback=loopback, index=index):
-                yield walk_child
+    # def _walk(self, restrict=False, loopback=False, index=None):
+    #     # We pass index only when we are going on the parent
+    #     # so don't yield the parent as well.
+    #     if index is None:
+    #         index = len(self.children)
+    #         yield self
+    #
+    #     for child in reversed(self.children[:index]):
+    #         for walk_child in child._walk(restrict=True):
+    #             yield walk_child
+    #
+    #     # If we want to continue with our parent, just do it.
+    #     if not restrict:
+    #         parent = self.parent
+    #         try:
+    #             if parent is None or not isinstance(parent, Widget):
+    #                 raise ValueError
+    #             index = parent.children.index(self)
+    #         except ValueError:
+    #             # Self is root, if we want to loopback from the first element:
+    #             if not loopback:
+    #                 return
+    #             # If we started with root (i.e. index==None), then we have to
+    #             # start from root again, so we return self again. Otherwise, we
+    #             # never returned it, so return it now starting with it.
+    #             parent = self
+    #             index = None
+    #         for walk_child in parent._walk(loopback=loopback, index=index):
+    #             yield walk_child
 
     def walk(self, restrict=False, loopback=False):
         return iter(self.children)
-
-        # gen = self._walk(restrict, loopback)
-        # next(gen)  # this is always self
-        #
-        # for node in gen:
-        #     if node is self:
-        #         return
-        #     yield node
-
-    # def walk(self):
-    #     """ Return children (and children of children) in render order
-    #     """
-    #     q = self.children.copy()
-    #     i = list()
-    #     while q:
-    #         child = q.pop()
-    #         q.extend(child.children)
-    #         i.append(child)
-    #
-    #     for child in i:
-    #         yield child
 
     def process_event(self, event):
         """ Processes events that were passed from the main event loop.
@@ -199,49 +202,49 @@ class Widget(object):
 
     def update(self, time_delta):
         self.animations.update(time_delta)
-        self.trigger_refresh()
-
         for child in list(self.children):
             child.update(time_delta)
 
-    def update_bounds(self):
-        """ Adjust own bounds from parent
-        
-        WIP
-        
-        :return: 
+    def update_rect(self):
+        """ Fit the rect to our bounds
+
+        Do not override.  Use _update_rect instead.
+
+        :return:
         """
         logger.debug("{} updating rect".format(self))
+        update_rect(self.rect, self.bounds)
+        # self.trigger_refresh()
+
+    def _update_rect(self):
+        # update_rect(self.rect, self.bounds)
+        pass
+
+    def update_bounds(self):
+        """ Adjust own bounds from parent's inner rect
+
+        Calling this will reset bounds if they were set manually.
+
+        :return:
+        """
+        logger.debug("{} updating bounds".format(self))
+        changed = False
 
         # if has a parent, check the parent
         if self.parent:
-            old = self.bounds.copy() if self.bounds else None
-
             if self.bounds is None:
-                # set our rect to the rect of the parent
                 self.bounds = self.parent.calc_internal_rect()
-            else:
-                # cannot copy object b/c animations may be modifying the rect
-                inner = self.parent.calc_internal_rect()
-                # self.bounds.x = inner.x
-                # self.bounds.y = inner.y
-                # self.bounds.w = inner.w
-                # self.bounds.h = inner.h
-
-            changed = not old == self.bounds
+                changed = True
 
         # no parent, so expand to fill the screen
-        else:
-            if self.bounds is None:
-                self.bounds = Rect((0, 0), prepare.SCREEN_SIZE)
-                changed = True
-            else:
-                changed = False
+        elif self.bounds is None:
+            self.bounds = Rect((0, 0), prepare.SCREEN_SIZE)
+            changed = True
 
         if changed:
-            logger.debug("RECT, {} {} {}".format(self, self.bounds, self.rect))
+            logger.debug("BOUNDS, {} {} {}".format(self, self.bounds, self.rect))
             logger.debug("{} trigger refresh update from parent".format(self))
-            self.trigger_refresh()
+            # self.trigger_refresh()
 
         return changed
 
@@ -266,12 +269,14 @@ class Widget(object):
         """
         if self._needs_refresh and not self._in_refresh:
 
-            if self.bounds is None:
-                self.update_bounds()
+            if self.rect is None:
+                self.rect = Rect(0, 0, 0, 0)
+                self.update_rect()
 
             # prevent recursion if refresh is checked during refresh
             self._in_refresh = True
 
+            # force refresh
             self._refresh_layout()
 
             for child in self.children:
@@ -302,7 +307,7 @@ class Widget(object):
 
         :return: None
         """
-        self.rect.topleft = self.bounds.topleft
+        pass
 
     def draw(self, surface):
         """ Cause this and all children to draw themselves to the surface
@@ -316,11 +321,13 @@ class Widget(object):
         :returns: None
         """
         self.update_bounds()
+        self.trigger_refresh()
         self.check_refresh()
         self._draw(surface)
 
-        for child in self.children:
-            child.draw(surface)
+        with surface_clipping_context(surface, self.bounds):
+            for child in self.children:
+                child.draw(surface)
 
     def _draw(self, surface):
         """ Draw only this widget to the surface
@@ -335,7 +342,7 @@ class Widget(object):
         If no padding is present, a copy of the window rect will be returned
 
         :returns: Rect representing space inside borders, if any
-        :rtype: pygame.Rect
+        :rtype: Rect
         """
         self.check_refresh()
         return self._calc_internal_rect()
@@ -343,24 +350,26 @@ class Widget(object):
     def _calc_internal_rect(self):
         """
 
-        :rtype: pygame.Rect
+        :rtype: Rect
         """
         return self.bounds.inflate(-self.padding, -self.padding)
 
     def calc_bounding_rect(self):
         """ Return a rect that contains this and all children
 
-        :rtype: pygame.Rect
+            This is not in screen space.
+
+        :rtype: Rect
         """
         self.check_refresh()
         kinder = list(self.children)
 
         if not kinder:
-            return self.rect
+            return self.irect
         elif len(kinder) == 1:
-            return Rect(kinder[0].rect)
+            return Rect(kinder[0].irect)
         else:
-            return kinder[0].rect.unionall([s.rect for s in kinder[1:]])
+            return kinder[0].rect.unionall([s.irect for s in kinder[1:]])
 
     def calc_final_rect(self):
         """ Calculate the area in the game window where menu is shown
@@ -368,10 +377,10 @@ class Widget(object):
         This value is the __desired__ location and size, and should not change
         over the lifetime of the widget.  It is used to generate animations.
 
-        :rtype: pygame.Rect
+        :rtype: Rect
         """
-        if self.bounds is None:
-            self.update_bounds()
+        # if self.bounds is None:
+        #     self.update_bounds()
 
         original = self.rect.copy()
         self.refresh_layout()
@@ -445,7 +454,7 @@ class Widget(object):
     def anchor(self, attribute, value):
         """ Set an anchor for the menu window
 
-        You can pass any string value that is used in a pygame rect,
+        You can pass any string value that is used in a rect,
         for example: "center", "topleft", and "right".
 
         When changes are made to the window or it is being opened

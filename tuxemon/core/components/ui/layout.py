@@ -31,6 +31,7 @@ import math
 import pygame
 
 from core.components.ui.widget import Widget
+from core.rect import Rect
 from core.tools import scale
 
 
@@ -182,8 +183,8 @@ class RelativeLayout(Layout):
     """
     Drawing operations are relative to the group's rect
     """
-    rect = pygame.Rect(0, 0, 0, 0)
-    _init_rect = pygame.Rect(0, 0, 0, 0)
+    rect = Rect(0, 0, 0, 0)
+    _init_rect = Rect(0, 0, 0, 0)
 
     def __init__(self, **kwargs):
         super(RelativeLayout, self).__init__()
@@ -199,7 +200,7 @@ class RelativeLayout(Layout):
         self.spritedict[widget] = self._init_rect
 
     def calc_absolute_rect(self, rect):
-        self.update_bounds()
+        # self.update_bounds()
         return rect.move(self.rect.topleft)
 
         # def draw(self, surface):
@@ -266,29 +267,35 @@ class GridLayout(RelativeLayout, MenuLayout):
             max_width = max(max_width, item.rect.width)
             max_height = max(max_height, item.rect.height)
 
-        # TODO: do not hardcode
-        cursor_width = scale(7)
-
         # self.update_bounds()
         width, height = self.bounds.size
-        width -= cursor_width
         column_spacing = width // self.columns
         items_per_column = math.ceil(len(self) / self.columns)
 
-        # fill available space
-        if self.expand:
-            line_spacing = self.line_spacing
-            if not line_spacing:
-                line_spacing = height // items_per_column
+        # fill available space or not
+        if self.line_spacing is None:
+            line_spacing = height // items_per_column
+            # line_spacing = int(max_height * 1.1)
         else:
-            line_spacing = int(max_height * 1.2)
+            line_spacing = self.line_spacing
 
-        # use rect, not bounds, or internal
-        anchor_x, anchor_y = self.rect.topleft
+        # NOTE: use irect, not bounds, or internal rect
+        anchor_x, anchor_y = self.bounds.move(self.irect.topleft).topleft
+
+        import pygame
+        import pygame.gfxdraw
+        pygame.gfxdraw.box(pygame.display.get_surface(), self.bounds, (255, 255, 0, 128))
+
+        # TODO: tweak visible bounds
+        # visible bounds is inflated normal bounds so next items
+        # can be scrolled into view without remaining hidden
+        visible_bounds = self.bounds.inflate(max_width, (line_spacing + max_height) * 2)
+        contains = visible_bounds.contains
 
         cell_size = column_spacing, line_spacing
         for index, item in enumerate(self.children):
             oy, ox = divmod(index, self.columns)
-            ox, oy = cursor_width + ox * column_spacing, oy * line_spacing
+            ox, oy = ox * column_spacing, oy * line_spacing
             topleft = anchor_x + ox, anchor_y + oy
-            item.bounds = pygame.Rect(topleft, cell_size)
+            item.bounds = Rect(topleft, cell_size)
+            item.visible = contains(item.bounds)

@@ -29,7 +29,6 @@ import logging
 import pygame
 
 from core import tools
-from core.components.animation import remove_animations_of
 from core.components.menu.interface import ImageWidget
 from core.components.ui.layout import GridLayout
 from core.components.ui.widget import Widget
@@ -42,7 +41,6 @@ class Menu(Widget):
 
     :background: String
 
-    :ivar rect: The rect of the menu in pixels, defaults to 0, 0, 400, 200.
     :ivar selected_index: The index position of the currently selected menu item.
     :ivar menu_items: A list of available menu items.
     """
@@ -56,6 +54,8 @@ class Menu(Widget):
     touch_aware = True  # if true, then menu items can be selected with the mouse/touch
     key_aware = True  # if true, then keyboard input will try to find items
     input_timeout = .01  # time to clear the keyboard input buffer
+    key_repeat_interval = .1  # time between repeat keypresses
+    key_repeat_delay = .5  # time to wait until repeat keys
 
     def __init__(self):
         super(Menu, self).__init__()
@@ -63,8 +63,10 @@ class Menu(Widget):
         self.menu_select_sound = tools.load_sound(self.menu_select_sound_filename)
 
         # for keyboard input
+        self._key_repeat_task = None  # type: Task
+        self._key_repeat_value = None  # type: int
+        self._key_repeat_timer = None
         self.string_input = ''  # for holding keyboard input
-        self._last_input = 0
 
         # menu_items is a layout of selectable elements
         self.menu_items = GridLayout()
@@ -75,6 +77,10 @@ class Menu(Widget):
         image = tools.load_and_scale(self.cursor_filename)
         self.cursor = ImageWidget(image)
         self.add_widget(self.cursor)
+
+        # init early because we will be changing it before next draw
+        # probably going to fix this hack later
+        self.cursor.bounds = self.cursor.irect.copy()
 
     # INPUT BUFFER
     def add_input_buffer(self, char):
@@ -213,9 +219,9 @@ class Menu(Widget):
         :returns: None
         """
         if event.type == pygame.KEYDOWN:
-
             self.in_focus = True
 
+            # TODO: remove this check each time
             # check if we have items, but they are all disabled
             disabled = all(i.disabled for i in self.menu_items)
 
@@ -228,14 +234,10 @@ class Menu(Widget):
 
                 else:
                     index = self.menu_items.determine_cursor_movement(self.selected_index, event)
-                    # if index == 6:
-                    #     parent = self.parent.parent
-                    #     parent.remove_widget(self.parent)
-                    #     parent.add_widget(self.parent)
-                    #     return
                     if not self.selected_index == index:
                         self.change_selection(index)
-                        return
+                        self.check_start_key_repeat(event.key)
+                    return
 
             # try to find items based on input
             if self.key_aware:
@@ -251,6 +253,10 @@ class Menu(Widget):
                     self.change_selection(index)
                     return
 
+        elif event.type == pygame.KEYUP:
+            self.check_key_repeat(event.key)
+            return
+
         # TODO: handling of click/drag, miss-click, etc
         # TODO: eventually, maybe move some handling into menuitems
         # TODO: handle screen scaling?
@@ -264,7 +270,8 @@ class Menu(Widget):
             # a sprite group may not be a relative group... so an attribute error will be raised
             # obvi, a wart, but will be fixed sometime (tm)
             try:
-                self.menu_items.update_bounds()
+                # self.menu_items.update_bounds()
+                pass
             except AttributeError:
                 # not a relative group, no need to adjust cursor
                 mouse_pos = event.pos
@@ -279,6 +286,70 @@ class Menu(Widget):
                 if item.rect.collidepoint(mouse_pos):
                     self.change_selection(index)
                     self.on_menu_selection(self.get_selected_item())
+
+    def check_start_key_repeat(self, key):
+        """ Only try to repeat a key if a repeat isn't already running
+
+        Simple check only allows one key repeat and prevent recursion.
+
+        :type key: int
+        :return:
+        """
+        if self._key_repeat_task is None:
+            self.start_key_repeat(key)
+
+    def start_key_repeat(self, key):
+        """ Begin timer until repeating starts
+
+        :type key: int
+        :return:
+        """
+        if self._key_repeat_task is None:
+            delay = self.task(self.start_key_interval, self.key_repeat_delay)
+            self._key_repeat_task = delay
+            self._key_repeat_value = key
+
+    def start_key_interval(self):
+        """ Begin repeating
+
+        :return:
+        """
+        task = self.task(self.handle_key_repeat, self.key_repeat_interval, -1)
+        self._key_repeat_task = task
+
+    def handle_key_repeat(self):
+        """ Emit a single event
+
+        These events will not propagate down state stack
+
+        :return:
+        """
+        event = pygame.event.Event(pygame.KEYDOWN, {'key': self._key_repeat_value, 'unicode': ''})
+        self.process_event(event)
+
+        # TODO: remove need to call check_bounds manually
+        # call check_bounds to ensure menu scrolls with virtual events
+        # some bug prevents check bounds from happening in process_event above
+        # could be related to the order that animations are execute
+        self.check_bounds()
+
+    def check_key_repeat(self, key):
+        """ Should repeating stop?
+
+        :param key:
+        :return:
+        """
+        if self._key_repeat_value == key:
+            self.stop_key_repeat()
+
+    def stop_key_repeat(self):
+        """ Stop repeating or waiting
+
+        :return:
+        """
+        self._key_repeat_task.abort()
+        self._key_repeat_task = None
+        self._key_repeat_value = None
 
     def get_index_from_input(self):
         for index, item in enumerate(self.menu_items):
@@ -297,7 +368,7 @@ class Menu(Widget):
         self.selected_index = index  # update the selection index
         self.menu_select_sound.play()  # play a sound
         self.trigger_cursor_update(animate)  # move cursor and [maybe] animate it
-        self.check_bounds()  # scroll items if off the screen
+        # self.check_bounds()  # scroll items if off the screen
         self.get_selected_item().in_focus = True  # set focus flag of new item
         self.on_menu_selection_change()  # let subclass know menu has changed
 
@@ -310,23 +381,25 @@ class Menu(Widget):
 
         :return: None
         """
-        # rect of the newly selected item
-        selected_rect = self.get_selected_item().rect
+        # rect of the newly selected item and cursor
+        # TODO: what is the selected item not able to test bounds?
+        selection = self.get_selected_item().rect.union(self.cursor.bounds)
+
+        # TODO: do not hardcode values
+        # adjust bounds to compensate for the cursor
+        bounds = self.bounds.inflate(tools.scale(-2), tools.scale(-6))
 
         # if selected rect is within bounds nothing needs to happen
-        if self.rect.contains(selected_rect):
+        if bounds.contains(selection):
             return
 
-        self.rect = self.calc_bounding_rect()
-        self.rect.topleft = self.bounds.topleft
-        print(selected_rect, self.rect, self.bounds)
-
         # determine if the contents need to be scrolled within its bounds
-        diff = tools.calc_scroll_thing(selected_rect, self.rect, self.bounds)
+        bounding_rect = self.calc_bounding_rect()
+
+        diff = tools.calc_scroll_thing(selection, bounding_rect, bounds)
         if diff:
-            print(diff)
-            remove_animations_of(self.rect, self.animations)
-            self.animate(self.rect, duration=.25, relative=True, **diff)
+            self.remove_animations_of(self.menu_items.irect)
+            self.animate(self.menu_items.irect, duration=.25, relative=True, **diff)
 
     def search_items(self, game_object):
         """ Non-optimised search through menu_items for a particular thing
@@ -352,11 +425,21 @@ class Menu(Widget):
         x, y = selected.rect.midleft
         x -= tools.scale(2)
 
+        self.cursor._flag = True
+
         if animate:
-            self.remove_animations_of(self.cursor.rect)
-            return self.animate(self.cursor.rect, right=x, centery=y, duration=self.cursor_move_duration)
+            # top = self.menu_items.bounds.top + 100
+            # self.remove_animations_of(self.menu_items.irect)
+            # self.animate(self.menu_items.irect, y=top, duration=self.cursor_move_duration)
+            self.cursor.bounds.size = self.cursor.irect.size
+            self.remove_animations_of(self.cursor.bounds)
+            ani = self.animate(self.cursor.bounds, right=x, centery=y, duration=self.cursor_move_duration)
+            ani.update_callback = self.check_bounds
+            return ani
         else:
-            self.cursor.rect.topleft = x, y
+            self.remove_animations_of(self.cursor.bounds)
+            self.cursor.bounds.size = self.cursor.irect.size
+            self.cursor.bounds.midright = x, y
             return None
 
     def get_selected_item(self):

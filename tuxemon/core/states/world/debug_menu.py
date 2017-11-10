@@ -55,9 +55,8 @@ from core.components.ui.menu import Menu
 from core.components.ui.textarea import TextArea
 from core.components.ui.textinput import TextInput
 from core.state import State
-# Create a logger for optional handling of debug messages.
-from core.tools import scale
 
+# Create a logger for optional handling of debug messages.
 logger = logging.getLogger(__name__)
 
 
@@ -75,7 +74,6 @@ class DebugMenuState(Layout, State):
 
         # load and scale the background/borders
         background = tools.load_image(self.background_filename)
-        # border = tools.load_and_scale(self.borders_filename)
 
         # set the widget to draw the background
         window = GraphicBox(None, background, (12, 222, 222))
@@ -97,13 +95,14 @@ class DebugMenuState(Layout, State):
 
         # widget to show map names
         self.filenames = Menu()
-        self.filenames.menu_items.line_spacing = scale(35)
+        self.filenames.menu_items.line_spacing = tools.scale(7)
         self.filenames.bounds = tools.scaled_rect(115, 8, 150, 130)
         self.update_filename_list()
         self.add_widget(self.filenames)
 
         self.children.remove(self.filenames)
         self.children.insert(1, self.filenames)
+        self.filenames.in_focus = True
 
     def scan_maps(self):
         """ Scan the resources folder for maps.  Return a sorted list of paths.

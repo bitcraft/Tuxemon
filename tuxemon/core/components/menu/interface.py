@@ -85,7 +85,9 @@ class ImageWidget(Widget):
     def __init__(self, image):
         super(ImageWidget, self).__init__()
         self.image = image
-        self.rect = image.get_rect()
+        self.irect = image.get_rect()
+        self.rect = self.irect.copy()
+        self._flag = False
 
     def _draw(self, surface):
         """
@@ -93,7 +95,11 @@ class ImageWidget(Widget):
         :param surface:
         :return:
         """
-        surface.blit(self.image, self.rect)
+        self.rect = self.irect.move(self.bounds.topleft)
+        if self.visible:
+            # if self._flag:
+            #     print(self, self.rect, self.irect, self.bounds)
+            surface.blit(self.image, self.rect)
 
 
 class MenuItem(ImageWidget):

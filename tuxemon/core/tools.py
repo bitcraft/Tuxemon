@@ -39,6 +39,7 @@ import logging
 import operator
 import os.path
 import re
+from contextlib import contextmanager
 from itertools import product
 
 import pygame
@@ -56,6 +57,14 @@ axis_rect_edge_map = {"y": {"top", "bottom"}, "x": {"left", "right"}}
 
 # font cache, since it is used often and slow to load
 _font_cache = dict()
+
+
+@contextmanager
+def surface_clipping_context(surface, clip):
+    original = surface.get_clip()
+    surface.set_clip(clip)
+    yield
+    surface.set_clip(original)
 
 
 def calc_scroll_thing(outside_rect, bounding_rect, bounds):
