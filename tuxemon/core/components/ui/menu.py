@@ -47,21 +47,14 @@ class MenuItem(ImageWidget):
         self.description = description
         self.game_object = game_object
 
-        # def __repr__(self):
-        #     return "<MenuItem: {}>".format(self.label)
-
 
 class Menu(Widget):
     """ A class to create menu objects.
-
-    :background: String
-
-    :ivar selected_index: The index position of the currently selected menu item.
-    :ivar menu_items: A list of available menu items.
     """
     # defaults for the menu
     columns = 1
     menu_select_sound_filename = "sounds/interface/menu-select.ogg"
+    input_timeout_found_filename = "sounds/interface/NenadSimic_Click.ogg"
     default_character_delay = 0.05
     animate_contents = False  # show contents while window opens
     cursor_filename = "gfx/arrow.png"
@@ -76,11 +69,11 @@ class Menu(Widget):
         super(Menu, self).__init__()
         self.selected_index = 0  # track which menu item is selected
         self.menu_select_sound = tools.load_sound(self.menu_select_sound_filename)
+        self.input_timeout_sound = tools.load_sound(self.input_timeout_found_filename)
 
         # for keyboard input handling
         self._key_repeat_task = None  # type: Task
         self._key_repeat_value = None  # type: int
-        self._key_repeat_timer = None
         self._input_clear_task = None  # type: Task
         self._input_string = ''  # for holding keyboard input
 
@@ -149,25 +142,25 @@ class Menu(Widget):
     #
     #     self.animate_text(find_textarea(), message)
 
-    def reload_items(self):
-        """ Empty all items in the menu and re-add them
-
-        Only works if initialize_items is used
-
-        :return: None
-        """
-        logger.debug("{} trigger refresh reloading items".format(self))
-        self.trigger_refresh()
-        items = self.initialize_items()
-        if items:
-            self.menu_items.clear_widgets()
-
-            for item in items:
-                self.add_widget(item)
-
-            number_items = len(self.menu_items)
-            if self.menu_items and self.selected_index >= number_items:
-                self.change_selection(number_items - 1)
+    # def reload_items(self):
+    #     """ Empty all items in the menu and re-add them
+    #
+    #     Only works if initialize_items is used
+    #
+    #     :return: None
+    #     """
+    #     logger.debug("{} trigger refresh reloading items".format(self))
+    #     self.trigger_refresh()
+    #     items = self.initialize_items()
+    #     if items:
+    #         self.menu_items.clear_widgets()
+    #
+    #         for item in items:
+    #             self.add_widget(item)
+    #
+    #         number_items = len(self.menu_items)
+    #         if self.menu_items and self.selected_index >= number_items:
+    #             self.change_selection(number_items - 1)
 
     def show_cursor(self):
         """ Show the cursor that indicates the selected object
@@ -215,6 +208,7 @@ class Menu(Widget):
         self._input_string += char
 
     def clear_input_buffer(self):
+        self.input_timeout_sound.play()
         self._input_string = ''
 
     def backspace(self):
@@ -271,14 +265,16 @@ class Menu(Widget):
                         return None
 
     def handle_keypress(self, event):
-        """ Handle a keypress from a human
+        """ Handle a keyboard keypress from a human
 
+        * for A-Z, 0-9, etc
         * store the input
         * keep a timer to clear the input
 
         :type event: pygame.event.Event
         :return:
         """
+        # TODO: filter out non-alphanumeric keys
         self.add_input_buffer(event.unicode.upper())
         if self._input_clear_task:
             self._input_clear_task.abort()
@@ -289,11 +285,18 @@ class Menu(Widget):
         else:
             task = self.task(self.clear_input_buffer, self.input_timeout)
             self._input_clear_task = task
-            self.change_selection(index)
+            if not self.selected_index == index:
+                self.change_selection(index)
 
     def find_selection(self, query):
+        """ Match input to the start of each label
+
+        :type query: str
+        :return:
+        """
+        len_query = len(query)
         for index, result in enumerate(self.menu_items.children):
-            if query in result.label.upper():
+            if query == result.label.upper()[:len_query]:
                 return index
         else:
             return None
@@ -337,12 +340,6 @@ class Menu(Widget):
         """
         event = pygame.event.Event(pygame.KEYDOWN, {'key': self._key_repeat_value, 'unicode': ''})
         self.process_event(event)
-
-        # TODO: remove need to call check_bounds manually
-        # call check_bounds to ensure menu scrolls with virtual events
-        # some bug prevents check bounds from happening in process_event above
-        # could be related to the order that animations are executed
-        self.check_bounds()
 
     def check_key_repeat(self, key):
         """ Should repeating stop?
@@ -404,24 +401,25 @@ class Menu(Widget):
         # pygame.gfxdraw.box(pygame.display.get_surface(), bounds, (255, 0, 0, 128))
         #
         # # green
+        # bounding_rect = self.calc_bounding_rect()
         # pygame.gfxdraw.box(pygame.display.get_surface(), bounding_rect, (0, 255, 0, 128))
         #
         # pygame.display.flip()
         #
         # import time
-        # time.sleep(.05)
+        # # time.sleep(.05)
 
         if bounds.contains(selection):
             return
 
         # determine if the contents need to be scrolled within its bounds
-        bounding_rect = self.calc_bounding_rect()
+        bounding_rect = self.menu_items.calc_bounding_rect()
 
         # if selected rect is within bounds nothing needs to happen
         diff = tools.calc_scroll_thing(selection, bounding_rect, bounds)
         if diff:
-            self.remove_animations_of(self.menu_items.irect)
-            self.animate(self.menu_items.irect, duration=.25, relative=True, **diff)
+            self.remove_animations_of(self.irect)
+            self.animate(self.irect, duration=.15, relative=True, **diff)
 
     def search_items(self, game_object):
         """ Non-optimised search through menu_items for a particular thing
@@ -442,23 +440,18 @@ class Menu(Widget):
         :param animate: If True, then arrow will move smoothly into position
         :returns: None or Animation
         """
-        selected = self.get_selected_item()
-
-        x, y = selected.rect.midleft
+        x, y = self.get_selected_item().bounds.midleft
         x -= tools.scale(2)
 
-        self.cursor._flag = True
+        # not sure why next line is needed....don't remove ^_^
+        self.cursor._bounds.size = self.cursor.irect.size
+        self.remove_animations_of(self.cursor._bounds)
 
         if animate:
-            # not sure why next line is needed....don't remove ^_^
-            self.cursor._bounds.size = self.cursor.irect.size
-            self.remove_animations_of(self.cursor._bounds)
             ani = self.animate(self.cursor._bounds, right=x, centery=y, duration=self.cursor_move_duration)
-            # ani.update_callback = self.check_bounds
+            ani.update_callback = self.check_bounds
             return ani
         else:
-            self.remove_animations_of(self.cursor._bounds)
-            self.cursor._bounds.size = self.cursor.irect.size
             self.cursor._bounds.midright = x, y
             return None
 
@@ -468,9 +461,7 @@ class Menu(Widget):
         :rtype: Widget
         """
         try:
-            item = self.menu_items[self.selected_index]
-            assert item is not None
-            return item
+            return self.menu_items[self.selected_index]
         except IndexError:
             return None
 

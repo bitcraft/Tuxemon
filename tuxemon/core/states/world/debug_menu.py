@@ -95,7 +95,7 @@ class DebugMenuState(Layout, State):
 
         # widget to show map names
         self.filenames = Menu()
-        self.filenames.menu_items.line_spacing = tools.scale(7)
+        self.filenames.menu_items.line_spacing = tools.scale(40)
         self.update_filename_list()
         self.add_widget(self.filenames)
         self.filenames.bounds = tools.scaled_rect(115, 8, 150, 130)
@@ -103,6 +103,8 @@ class DebugMenuState(Layout, State):
         self.children.remove(self.filenames)
         self.children.insert(1, self.filenames)
         self.filenames.in_focus = True
+
+        self.animate(self.filenames.irect, top=200, duration=2, relative=True)
 
     def scan_maps(self):
         """ Scan the resources folder for maps.  Return a sorted list of paths.

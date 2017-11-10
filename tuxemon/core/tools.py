@@ -85,8 +85,6 @@ def calc_scroll_thing(outside_rect, bounding_rect, bounds):
     # get a list of axes that are allowed to scroll
     scroll_axes = calc_scroll_freedom(bounding_rect, bounds)
 
-    print(scroll_axes)
-
     # only calculate changes if the menu is able to scroll
     if scroll_axes:
         # get which quadrant the selected item is in in relation to the screen

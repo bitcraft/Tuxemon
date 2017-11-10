@@ -84,19 +84,19 @@ class Widget(object):
         return "<Widget: {}>".format(self.__class__.__name__)
 
     def __len__(self):
-        return len(list(self.walk()))
+        return len(self.children)
 
     def __nonzero__(self):
         return bool(len(self))
 
     def __getitem__(self, item):
-        return list(self.walk())[item]
+        return self.children[item]
 
     def __iter__(self):
         return self.walk()
 
     def __contains__(self, item):
-        return item in list(self.walk())
+        return item in self.children
 
     @property
     def bounds(self):
@@ -120,37 +120,11 @@ class Widget(object):
     def in_focus(self, value):
         self._in_focus = bool(value)
 
-    # def _walk(self, restrict=False, loopback=False, index=None):
-    #     # We pass index only when we are going on the parent
-    #     # so don't yield the parent as well.
-    #     if index is None:
-    #         index = len(self.children)
-    #         yield self
-    #
-    #     for child in reversed(self.children[:index]):
-    #         for walk_child in child._walk(restrict=True):
-    #             yield walk_child
-    #
-    #     # If we want to continue with our parent, just do it.
-    #     if not restrict:
-    #         parent = self.parent
-    #         try:
-    #             if parent is None or not isinstance(parent, Widget):
-    #                 raise ValueError
-    #             index = parent.children.index(self)
-    #         except ValueError:
-    #             # Self is root, if we want to loopback from the first element:
-    #             if not loopback:
-    #                 return
-    #             # If we started with root (i.e. index==None), then we have to
-    #             # start from root again, so we return self again. Otherwise, we
-    #             # never returned it, so return it now starting with it.
-    #             parent = self
-    #             index = None
-    #         for walk_child in parent._walk(loopback=loopback, index=index):
-    #             yield walk_child
+    def walk(self):
+        """ Eventually BFS
 
-    def walk(self, restrict=False, loopback=False):
+        :return:
+        """
         return iter(self.children)
 
     def process_event(self, event):
@@ -367,7 +341,12 @@ class Widget(object):
 
         :return:
         """
-        return self.irect.move(self.bounds.topleft)
+        if self.parent:
+            irect = self.parent.irect
+            return self.irect.move(self.bounds.topleft).move(irect.topleft)
+
+        else:
+            return self.irect.move(self.bounds.topleft)
 
     def calc_final_rect(self):
         """ Calculate the area in the game window where menu is shown

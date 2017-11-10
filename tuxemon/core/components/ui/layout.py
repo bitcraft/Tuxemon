@@ -267,7 +267,6 @@ class GridLayout(RelativeLayout, MenuLayout):
             max_width = max(max_width, item.rect.width)
             max_height = max(max_height, item.rect.height)
 
-        # self.update_bounds()
         width, height = self.bounds.size
         column_spacing = width // self.columns
         items_per_column = math.ceil(len(self) / self.columns)
@@ -281,10 +280,11 @@ class GridLayout(RelativeLayout, MenuLayout):
 
         # NOTE: use irect, not bounds, or internal rect
         anchor_x, anchor_y = self.bounds.move(self.irect.topleft).topleft
+        anchor_x, anchor_y = self.translate_irect().topleft
+        anchor_x, anchor_y = self.bounds.topleft
 
         bounding = self.calc_bounding_rect()
 
-        import pygame
         import pygame.gfxdraw
         pygame.gfxdraw.box(pygame.display.get_surface(), bounding, (255, 255, 0, 128))
 
