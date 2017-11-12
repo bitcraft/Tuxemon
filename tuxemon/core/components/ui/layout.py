@@ -264,8 +264,8 @@ class GridLayout(RelativeLayout, MenuLayout):
         max_width = 0
         max_height = 0
         for item in self.children:
-            max_width = max(max_width, item.rect.width)
-            max_height = max(max_height, item.rect.height)
+            max_width = max(max_width, item.irect.width)
+            max_height = max(max_height, item.irect.height)
 
         width, height = self.bounds.size
         column_spacing = width // self.columns
@@ -278,26 +278,15 @@ class GridLayout(RelativeLayout, MenuLayout):
         else:
             line_spacing = self.line_spacing
 
-        # NOTE: use irect, not bounds, or internal rect
-        anchor_x, anchor_y = self.bounds.move(self.irect.topleft).topleft
-        anchor_x, anchor_y = self.translate_irect().topleft
-        anchor_x, anchor_y = self.bounds.topleft
-
-        bounding = self.calc_bounding_rect()
-
-        import pygame.gfxdraw
-        pygame.gfxdraw.box(pygame.display.get_surface(), bounding, (255, 255, 0, 128))
-
         # TODO: tweak visible bounds
         # visible bounds is inflated normal bounds so next items
         # can be scrolled into view without remaining hidden
-        visible_bounds = self.bounds.inflate(max_width, (line_spacing + max_height) * 2)
+        # visible_bounds = visible_bounds.inflate(max_width, (line_spacing + max_height) * 2)
+        visible_bounds = self.real_bounds()
         contains = visible_bounds.contains
-
         cell_size = column_spacing, line_spacing
         for index, item in enumerate(self.children):
             oy, ox = divmod(index, self.columns)
-            ox, oy = ox * column_spacing, oy * line_spacing
-            topleft = anchor_x + ox, anchor_y + oy
+            topleft = ox * column_spacing, oy * line_spacing
             item.bounds = Rect(topleft, cell_size)
-            item.visible = contains(item.bounds)
+            item.visible = contains(item.calc_screen_rect())

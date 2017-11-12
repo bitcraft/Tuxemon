@@ -7,7 +7,6 @@ class ImageWidget(Widget):
         self.image = image
         self.irect = image.get_rect()
         self.rect = self.irect.copy()
-        self._flag = False
 
     def _draw(self, surface):
         """
@@ -15,8 +14,6 @@ class ImageWidget(Widget):
         :type surface: pygame.Surface
         :return:
         """
-        self.rect = self.calc_bounding_rect()
         if self.visible:
-            # if self._flag:
-            #     print(self, self.rect, self.irect, self.bounds)
+            self.rect = self.calc_screen_rect()
             surface.blit(self.image, self.rect)

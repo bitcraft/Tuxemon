@@ -117,7 +117,7 @@ class Window(Widget):
         self.rect.center = center
 
         # move the bounding box taking account the anchors
-        self.position_rect()
+        # self.position_rect()
 
     def resume(self):
         if self.state == "closed":

@@ -61,19 +61,21 @@ class Widget(object):
         self._in_refresh = False
         self._needs_refresh = True
 
-        # bounds: screen space region where widget is expected to draw
+        # bounds: widget space region where widget is expected to draw
         # bounds are set by the parents
+        # bounds are relative to the parent widget
+        # the root widget will expose screen space
         self._bounds = None  # type: Rect
         self.fit_bounds()
 
         # irect: rect, relative to bounds; "internal rect"
         # irect position is set by parent or widget
+        # irect will not change own bounds, but will change children bounds
         # irect size should not be changed by parent
         self.irect = Rect(0, 0, 0, 0)
 
         # rect: screen space region where widget was last drawn
-        # rect is set by the widget
-        # rect should not be changed by parent
+        # rect should not be set manually
         self.rect = None  # type: Rect
 
         # anchors: used to position rect inside the bounds
@@ -288,10 +290,9 @@ class Widget(object):
         self.trigger_refresh()
         self.check_refresh()
 
-        with tools.clip_context(surface, self._bounds):
-            self._draw(surface)
-            for child in self.children:
-                child.draw(surface)
+        self._draw(surface)
+        for child in self.children:
+            child.draw(surface)
 
     def _draw(self, surface):
         """ Draw only this widget to the surface
@@ -317,7 +318,29 @@ class Widget(object):
 
         :rtype: Rect
         """
-        return self._bounds.inflate(-self.padding, -self.padding)
+        w, h = self.bounds.size
+        padding = self.padding
+        return Rect(0, 0, w - padding, h - padding)
+
+    def calc_screen_rect(self):
+        return self.translate_rect(self.irect)
+
+    def real_bounds(self):
+        rect = self._bounds
+        parent = self.parent
+        while parent:
+            rect = rect.move(parent._bounds.topleft)
+            parent = parent.parent
+        return rect
+
+    def translate_rect(self, rect, final=None):
+        rect = rect.move(self._bounds.topleft)
+        parent = self.parent
+        while parent != final:
+            rect2 = parent.irect.move(parent._bounds.topleft)
+            rect = rect.move(rect2.topleft)
+            parent = parent.parent
+        return rect
 
     def calc_bounding_rect(self):
         """ Return a screen rect that contains this and all children
@@ -329,24 +352,12 @@ class Widget(object):
         :rtype: Rect
         """
         self.check_refresh()
-        root = self.translate_irect()
+        root = self.calc_screen_rect()
         if self.children:
             kinder = [i.calc_bounding_rect() for i in self.children]
             return root.unionall(kinder)
         else:
             return root
-
-    def translate_irect(self):
-        """ Return irect in screen coordinates
-
-        :return:
-        """
-        if self.parent:
-            irect = self.parent.irect
-            return self.irect.move(self.bounds.topleft).move(irect.topleft)
-
-        else:
-            return self.irect.move(self.bounds.topleft)
 
     def calc_final_rect(self):
         """ Calculate the area in the game window where menu is shown
@@ -408,21 +419,21 @@ class Widget(object):
         for widget in list(self.children):
             self.remove_widget(widget)
 
-    def position_rect(self):
-        """ Reposition irect taking in account the anchors
-
-        This will adjust the internal position of the rect
-
-        :return: True if the rect was changed
-        :rtype: bool
-        """
-        old = self.irect.copy()
-
-        for attribute, value in self._anchors.items():
-            setattr(self.irect, attribute, value)
-
-        if not self.rect == old:
-            self.trigger_refresh()
+    # def position_rect(self):
+    #     """ Reposition irect taking in account the anchors
+    #
+    #     This will adjust the internal position of the rect
+    #
+    #     :return: True if the rect was changed
+    #     :rtype: bool
+    #     """
+    #     old = self.irect.copy()
+    #
+    #     for attribute, value in self._anchors.items():
+    #         setattr(self.irect, attribute, value)
+    #
+    #     if not self.rect == old:
+    #         self.trigger_refresh()
 
     def anchor(self, attribute, value):
         """ Set an anchor for the menu window

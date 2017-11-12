@@ -388,26 +388,10 @@ class Menu(Widget):
         :return: None
         """
         # bounds of the newly selected item
-        selection = self.get_selected_item().bounds
+        selection = self.get_selected_item().calc_screen_rect()
 
         # adjust bounds to compensate for the cursor
         bounds = self._bounds.inflate(0, -tools.scale(8))
-
-        # import pygame.gfxdraw
-        # # white
-        # pygame.gfxdraw.box(pygame.display.get_surface(), selection, (255, 255, 255, 128))
-        #
-        # # red
-        # pygame.gfxdraw.box(pygame.display.get_surface(), bounds, (255, 0, 0, 128))
-        #
-        # # green
-        # bounding_rect = self.calc_bounding_rect()
-        # pygame.gfxdraw.box(pygame.display.get_surface(), bounding_rect, (0, 255, 0, 128))
-        #
-        # pygame.display.flip()
-        #
-        # import time
-        # # time.sleep(.05)
 
         if bounds.contains(selection):
             return
@@ -419,7 +403,7 @@ class Menu(Widget):
         diff = tools.calc_scroll_thing(selection, bounding_rect, bounds)
         if diff:
             self.remove_animations_of(self.irect)
-            self.animate(self.irect, duration=.15, relative=True, **diff)
+            self.animate(self.irect, duration=.25, relative=True, **diff)
 
     def search_items(self, game_object):
         """ Non-optimised search through menu_items for a particular thing
