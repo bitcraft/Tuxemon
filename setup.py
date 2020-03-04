@@ -5,7 +5,7 @@ import fnmatch
 import os
 
 #build the translations
-from tuxemon.core.components.locale import T
+from tuxemon.core.locale import T
 
 
 # Find all the python modules
