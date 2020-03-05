@@ -31,32 +31,33 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import os.path
+from os.path import join, abspath, dirname, exists
 
 from tuxemon.core.platform import get_config_dir
 
 # tuxemon project root dir
-BASEDIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-
-# main game and config dir
-# TODO: this imports pygame from core.prepare - refactor to avoid this?
+BASEDIR = abspath(join(dirname(__file__), '..'))
 USER_GAME_DIR = get_config_dir()
 
 CONFIG_FILE = "tuxemon.cfg"
 
 # config file paths
-USER_CONFIG_PATH = os.path.join(USER_GAME_DIR, CONFIG_FILE)
-DEFAULT_CONFIG_PATH = os.path.join(BASEDIR, CONFIG_FILE)
+USER_CONFIG_PATH = join(USER_GAME_DIR, CONFIG_FILE)
+DEFAULT_CONFIG_PATH = join(BASEDIR, CONFIG_FILE)
 
 # game data dir
-USER_GAME_DATA_DIR = os.path.join(USER_GAME_DIR, "data")
+USER_GAME_DATA_DIR = join(USER_GAME_DIR, "data")
 
 # game savegame dir
-USER_GAME_SAVE_DIR = os.path.join(USER_GAME_DIR, "saves")
+USER_GAME_SAVE_DIR = join(USER_GAME_DIR, "saves")
 
 # mods
-mods_folder = os.path.join(BASEDIR, "..", "mods")
+mods_folder = abspath(join(BASEDIR, "..", "mods"))
+
+# workaround for cx_freeze/windows
+if not exists(mods_folder):
+    mods_folder = abspath(join(BASEDIR, "..", "..", "mods"))
 
 # action/condition plugins (eventually move out of lib folder)
-CONDITIONS_PATH = os.path.join(BASEDIR, "core/event/conditions")
-ACTIONS_PATH = os.path.join(BASEDIR, "core/event/actions")
+CONDITIONS_PATH = join(BASEDIR, "core/event/conditions")
+ACTIONS_PATH = join(BASEDIR, "core/event/actions")

@@ -24,10 +24,14 @@ try:
 
     # import also android mixer
     import android.mixed as mixer
-except ImportError:
-    import pygame.mixer as mixer
 
-    _pygame = True
+except ImportError:
+    try:
+        import pygame.mixer as mixer
+    except ImportError:
+        _pygame = False
+    else:
+        _pygame = True
 
 
 def init():

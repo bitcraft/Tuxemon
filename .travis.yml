@@ -1,8 +1,8 @@
-# don't change to python, we are building our own python venv for build
+# don't change language to python, we are building our own python venv for build
 language: shell
 dist: bionic
 before_install:
-  - sudo apt-get install -y fakeroot git curl squashfs-tools sed debmake debhelper python3-all python3-setuptools
+  - sudo apt-get install -y wine fakeroot git curl squashfs-tools sed debmake debhelper python3-all python3-setuptools
   - virtualenv -p /usr/bin/python3 build_venv
   - source build_venv/bin/activate
   - pip3 install -r requirements.txt
@@ -12,6 +12,12 @@ script:
   - python3 setup.py --command-packages=stdeb.command bdist_deb
   - ls dist/*
   - cp dist/*tar.gz build/
+  # Windows
+  - wget https://www.python.org/ftp/python/3.8.2/python-3.8.2-amd64.exe
+  - wine python-3.8.2-amd64.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0
+  - wine pip install pyinstaller
+  - wine pip install -r requirements.txt
+  - wine python build_win32.py build
   # GCW-Zero
   # - cd dist
   # - tar xvfz tuxemon*.tar.gz

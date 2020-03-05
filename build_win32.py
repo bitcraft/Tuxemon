@@ -12,8 +12,8 @@ DO NOT RUN FROM A VENV.  YOU WILL BE MET WITH INSURMOUNTABLE SORROW.
 from cx_Freeze import setup, Executable
 
 includes = ['pkg_resources']
-includefiles = ['tuxemon/tuxemon.cfg']
-excludes = ['email', 'tkinter', 'pyglet']
+includefiles = ['mods']
+excludes = ['tkinter', 'pyglet']
 packages = ['pytmx', 'pyscroll', 'pygame', 'six', 'neteria', 'tuxemon']
 
 namespace_packages = []
@@ -29,5 +29,5 @@ if __name__ == '__main__':
         version='0.4.2',
         options={'build_exe': build_exe_options},
         description='Open source RPG',
-        executables=[Executable('tuxemon.py', icon='tuxemon/resources/gfx/icon.ico')],
+        executables=[Executable('tuxemon.py', icon='tuxemon/resources/icon.ico')],
     )

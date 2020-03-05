@@ -9,4 +9,7 @@ pytmx>=3.20.17
 requests>=2.19.1
 six
 natsort
+
+# for packaging only
 stdeb
+cx_freeze
