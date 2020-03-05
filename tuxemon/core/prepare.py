@@ -193,7 +193,6 @@ def fetch(*args):
 
     for mod_name in CONFIG.mods:
         path = os.path.join(paths.mods_folder, mod_name, relative_path)
-        print(path)
         if os.path.exists(path):
             return path
 
