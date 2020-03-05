@@ -1,8 +1,7 @@
+# don't change to python, we are building our own python venv for build
 language: shell
 dist: bionic
 before_install:
-  # maintain our own python to use the debian variant required for building
-  - sudo apt-get -y update
   - sudo apt-get install -y fakeroot git curl squashfs-tools sed debmake debhelper python3-all python3-setuptools
   - virtualenv -p /usr/bin/python3 build_venv
   - source build_venv/bin/activate
@@ -11,20 +10,15 @@ before_install:
 script:
   # Debian
   - python3 setup.py --command-packages=stdeb.command bdist_deb
-  # - python3 setup.py sdist
-  # - cd dist
-  # - tar xvfz tuxemon*.tar.gz
-  # - cd tuxemon*
-  # - debmake -b':py3'
-  # - dpkg-buildpackage -us -uc
-  # - cd ../..
-  # - mv ./dist/tuxemon*.deb ./build/tuxemon-unstable-latest.deb
   # GCW-Zero
-  # - sed -i 's/resolution_x.*/resolution_x = 320/g' tuxemon/tuxemon.cfg
-  # - sed -i 's/resolution_y.*/resolution_y = 240/g' tuxemon/tuxemon.cfg
-  # - sed -i 's/fullscreen.*/fullscreen = 1/g' tuxemon/tuxemon.cfg
-  # - cp tuxemon/resources/gfx/icon_32.png tuxemon/resources/gfx/icon.png
-  # - mksquashfs tuxemon ./build/tuxemon-unstable-latest.opk -all-root -noappend -no-exports -no-xattrs
+  - cd dist
+  - tar xvfz tuxemon*.tar.gz
+  - cd tuxemon*
+  - sed -i 's/resolution_x.*/resolution_x = 320/g' tuxemon/tuxemon.cfg
+  - sed -i 's/resolution_y.*/resolution_y = 240/g' tuxemon/tuxemon.cfg
+  - sed -i 's/fullscreen.*/fullscreen = 1/g' tuxemon/tuxemon.cfg
+  - cp tuxemon/resources/gfx/icon_32.png tuxemon/resources/gfx/icon.png
+  - mksquashfs tuxemon ./build/tuxemon-unstable-latest.opk -all-root -noappend -no-exports -no-xattrs
 deploy:
   provider: s3
   access_key_id: AKIAJCO54X2SZSP2HYCA
