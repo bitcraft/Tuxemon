@@ -1,10 +1,12 @@
-language: python
+language: shell
 dist: bionic
-python:
-  - '3.6'
 before_install:
+  # maintain our own python to use the debian variant required for building
+  - sudo apt-get -y update
+  - sudo apt-get install -y fakeroot git curl squashfs-tools sed debmake debhelper python3-all python3-setuptools
+  - virtualenv -p /usr/bin/python3 buid_venv
+  - source build_venv/bin/activate
   - pip3 install -r requirements.txt
-  - sudo apt-get install -y fakeroot git curl squashfs-tools sed debmake debhelper python-all python3-all python-setuptools python3-setuptools
   - mkdir -p ./build
 script:
   # Debian
