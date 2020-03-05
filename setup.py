@@ -4,15 +4,21 @@ import fnmatch
 import os
 
 from setuptools import setup
-from setuptools.command import build_py
+from setuptools.command.build_py import build_py
+from setuptools.command.sdist import sdist
 
 
-class TuxemonBuild(build_py):
+def compile_translations():
+    from tuxemon.core.locale import T
+
+    T.collect_languages()
+    T.build_translations()
+
+
+class TuxemonBuild(sdist):
     def run(self):
-        from tuxemon.core.locale import T
-        T.collect_languages()
-        T.build_translations()
-        build_py.run(self)
+        compile_translations()
+        sdist.run(self)
 
 
 # Find all the python modules
@@ -52,7 +58,7 @@ setup(
     install_requires=REQUIREMENTS,
     entry_points={"gui_scripts": ["tuxemon = tuxemon.__main__:main"]},
     cmdclass={
-        "build_py": TuxemonBuild,
+        "sdist": TuxemonBuild,
     },
     classifiers=[
         "Intended Audience :: End Users/Desktop",
