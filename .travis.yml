@@ -2,7 +2,7 @@
 language: shell
 dist: bionic
 before_install:
-  - sudo apt-get install -y wine-development fakeroot git curl squashfs-tools sed debmake debhelper python3-all python3-setuptools
+  - sudo apt-get install -y wine-stable fakeroot git curl squashfs-tools sed debmake debhelper python3-all python3-setuptools
   - virtualenv -p /usr/bin/python3 build_venv
   - source build_venv/bin/activate
   - pip3 install -r requirements.txt
