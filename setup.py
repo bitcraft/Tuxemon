@@ -4,7 +4,6 @@ import fnmatch
 import os
 
 from setuptools import setup
-from setuptools.command.build_py import build_py
 from setuptools.command.sdist import sdist
 
 
@@ -15,7 +14,7 @@ def compile_translations():
     T.build_translations()
 
 
-class TuxemonBuild(sdist):
+class TuxemonSourceDist(sdist):
     def run(self):
         compile_translations()
         sdist.run(self)
@@ -58,7 +57,7 @@ setup(
     install_requires=REQUIREMENTS,
     entry_points={"gui_scripts": ["tuxemon = tuxemon.__main__:main"]},
     cmdclass={
-        "sdist": TuxemonBuild,
+        "sdist": TuxemonSourceDist,
     },
     classifiers=[
         "Intended Audience :: End Users/Desktop",

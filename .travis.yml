@@ -8,6 +8,7 @@ before_install:
   - mkdir -p ./build
 script:
   # Debian
+  - python3 setup.py --command-packages=stdeb.command bdist_deb
   - python3 setup.py sdist
   - cd dist
   - tar xvfz tuxemon*.tar.gz
