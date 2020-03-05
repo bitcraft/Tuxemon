@@ -9,8 +9,8 @@ before_install:
   - pip3 install -r requirements.txt
   - mkdir -p ./build
 before_script:
-  - "export DISPLAY=:99.0"
-  - "sh -e /etc/init.d/xvfb start"
+  - export DISPLAY=:99.0
+  - Xvfb :99 &
   - sleep 3 # give xvfb some time to start
 script:
   # Debian/Ubuntu package
