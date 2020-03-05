@@ -10,6 +10,7 @@ before_install:
 script:
   # Debian
   - python3 setup.py --command-packages=stdeb.command bdist_deb
+  - ls dist/*
   - cp dist/*tar.gz build/
   # GCW-Zero
   # - cd dist
