@@ -10,15 +10,17 @@ before_install:
 script:
   # Debian
   - python3 setup.py --command-packages=stdeb.command bdist_deb
+  - cp dist/*tar.gz build/
   # GCW-Zero
-  - cd dist
-  - tar xvfz tuxemon*.tar.gz
-  - cd tuxemon*
-  - sed -i 's/resolution_x.*/resolution_x = 320/g' tuxemon/tuxemon.cfg
-  - sed -i 's/resolution_y.*/resolution_y = 240/g' tuxemon/tuxemon.cfg
-  - sed -i 's/fullscreen.*/fullscreen = 1/g' tuxemon/tuxemon.cfg
-  - cp tuxemon/resources/gfx/icon_32.png tuxemon/resources/gfx/icon.png
-  - mksquashfs tuxemon ./build/tuxemon-unstable-latest.opk -all-root -noappend -no-exports -no-xattrs
+  # - cd dist
+  # - tar xvfz tuxemon*.tar.gz
+  # cd fails
+  # - cd tuxemon*
+  # - sed -i 's/resolution_x.*/resolution_x = 320/g' tuxemon/tuxemon.cfg
+  # - sed -i 's/resolution_y.*/resolution_y = 240/g' tuxemon/tuxemon.cfg
+  # - sed -i 's/fullscreen.*/fullscreen = 1/g' tuxemon/tuxemon.cfg
+  # - cp tuxemon/resources/gfx/icon_32.png tuxemon/resources/gfx/icon.png
+  # - mksquashfs tuxemon ./build/tuxemon-unstable-latest.opk -all-root -noappend -no-exports -no-xattrs
 deploy:
   provider: s3
   access_key_id: AKIAJCO54X2SZSP2HYCA
