@@ -1,6 +1,6 @@
 # don't change language to python, we are building our own python venv for build
 language: shell
-dist: bionic
+dist: xenial
 services:
   - xvfb
 before_install:
