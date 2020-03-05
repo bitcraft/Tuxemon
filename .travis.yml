@@ -1,18 +1,19 @@
 # don't change language to python, we are building our own python venv for build
+# xvfb services doesn't work
 language: shell
-dist: xenial
-services:
-  - xvfb
+dist: bionic
 before_install:
-  - sudo apt-get install -y wine-stable wine32 fakeroot git curl squashfs-tools sed debmake debhelper python3-all python3-setuptools
+  - sudo apt-get install -y xvfb wine-stable wine32 fakeroot git curl squashfs-tools sed debmake debhelper python3-all python3-setuptools
   - virtualenv -p /usr/bin/python3 build_venv
   - source build_venv/bin/activate
   - pip3 install -r requirements.txt
   - mkdir -p ./build
+before_script:
+  - "export DISPLAY=:99.0"
+  - "sh -e /etc/init.d/xvfb start"
+  - sleep 3 # give xvfb some time to start
 script:
-  # Debian
-  - echo $DISPLAY
-  - exit 100
+  # Debian/Ubuntu package
   #- python3 setup.py --command-packages=stdeb.command bdist_deb
   #- ls dist/*
   #- cp dist/*tar.gz build/
