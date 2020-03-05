@@ -11,9 +11,11 @@ before_install:
   - mkdir -p ./build
 script:
   # Debian
-  - python3 setup.py --command-packages=stdeb.command bdist_deb
-  - ls dist/*
-  - cp dist/*tar.gz build/
+  - echo $DISPLAY
+  - exit 100
+  #- python3 setup.py --command-packages=stdeb.command bdist_deb
+  #- ls dist/*
+  #- cp dist/*tar.gz build/
   # Windows
   - wget https://www.python.org/ftp/python/3.8.2/python-3.8.2-amd64.exe
   - wine python-3.8.2-amd64.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0
