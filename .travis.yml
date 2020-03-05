@@ -1,6 +1,8 @@
 # don't change language to python, we are building our own python venv for build
 language: shell
 dist: bionic
+services:
+  - xvfb
 before_install:
   - sudo apt-get install -y wine-stable wine32 fakeroot git curl squashfs-tools sed debmake debhelper python3-all python3-setuptools
   - virtualenv -p /usr/bin/python3 build_venv
