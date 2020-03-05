@@ -1,22 +1,29 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-from setuptools import setup
 import fnmatch
 import os
 
-#build the translations
-from tuxemon.core.locale import T
+from setuptools import setup
+from setuptools.command import build_py
+
+
+class TuxemonBuild(build_py):
+    def run(self):
+        from tuxemon.core.locale import T
+        T.collect_languages()
+        T.build_translations()
+        build_py.run(self)
 
 
 # Find all the python modules
 modules = []
 matches = []
-for root, dirnames, filenames in os.walk('tuxemon'):
-    for filename in fnmatch.filter(filenames, '__init__.py'):
+for root, dirnames, filenames in os.walk("tuxemon"):
+    for filename in fnmatch.filter(filenames, "__init__.py"):
         matches.append(os.path.join(root, filename))
 
 for match in matches:
-    match = match.replace(os.sep+"__init__.py", "")
+    match = match.replace(os.sep + "__init__.py", "")
     match = match.replace(os.sep, ".")
     modules.append(match)
 
@@ -29,34 +36,35 @@ with open("requirements.txt", "r") as f:
     REQUIREMENTS = f.read().splitlines()
 
 # Configure the setuptools
-setup(name='tuxemon',
-      version=VERSION,
-      description='Open source monster-fighting RPG',
-      author='William Edwards',
-      author_email='shadowapex@gmail.com',
-      maintainer='Tuxemon',
-      maintainer_email='info@tuxemon.org',
-      url='https://www.tuxemon.org',
-      include_package_data=True,
-      packages=modules,
-      license="GPLv3",
-      long_description='https://github.com/Tuxemon/Tuxemon',
-      install_requires=REQUIREMENTS,
-      entry_points={
-          'gui_scripts': [
-              'tuxemon = tuxemon.__main__:main'
-          ]
-      },
-      classifiers=[
-          "Intended Audience :: End Users/Desktop",
-          "Development Status :: 3 - Alpha",
-          "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
-          "Programming Language :: Python :: 2.7",
-          "Programming Language :: Python :: 3.3",
-          "Programming Language :: Python :: 3.4",
-          "Programming Language :: Python :: 3.5",
-          "Programming Language :: Python :: 3.6",
-          "Topic :: Games/Entertainment",
-          "Topic :: Games/Entertainment :: Role-Playing",
-      ]
-      )
+setup(
+    name="tuxemon",
+    version=VERSION,
+    description="Open source monster-fighting RPG",
+    author="William Edwards",
+    author_email="shadowapex@gmail.com",
+    maintainer="Tuxemon",
+    maintainer_email="info@tuxemon.org",
+    url="https://www.tuxemon.org",
+    include_package_data=True,
+    packages=modules,
+    license="GPLv3",
+    long_description="https://github.com/Tuxemon/Tuxemon",
+    install_requires=REQUIREMENTS,
+    entry_points={"gui_scripts": ["tuxemon = tuxemon.__main__:main"]},
+    cmdclass={
+        "build_py": TuxemonBuild,
+    },
+    classifiers=[
+        "Intended Audience :: End Users/Desktop",
+        "Development Status :: 3 - Alpha",
+        "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.3",
+        "Programming Language :: Python :: 3.4",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Topic :: Games/Entertainment",
+        "Topic :: Games/Entertainment :: Role-Playing",
+    ],
+)
